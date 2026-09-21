@@ -5,62 +5,63 @@ import type { SpriteCanvas } from './pixelArt'
 const CAVITY = '#070604'
 const CAVITY_LIP = '#14110e'
 
-/** 约 2×2；左缘完整在画布内，开口朝右接到土路 */
-export const CAVE_ORIGIN = { x: ROAD_PX, y: CELL - ROAD_PX * 4 }
+/** 约 2×2；左缘贴画布，开口朝右接到土路 */
+export const CAVE_ORIGIN = { x: 0, y: CELL - ROAD_PX * 4 }
 
-/** 约 2×2；开口朝左，略伸出右缘，避开上方弯道格 */
-export const GATE_ORIGIN = { x: 16 * CELL + ROAD_PX * 2, y: 10 * CELL - ROAD_PX * 4 }
+/** 约 2×2；开口朝左，略伸出右缘 */
+export const GATE_ORIGIN = { x: 16 * CELL, y: 10 * CELL - ROAD_PX * 4 }
 
-/** 门后几像素火光，贴在画布右缘 */
-export const GATE_FIRE = { x: 717, y: 418 }
+/** 门后几像素火光 */
+export const GATE_FIRE = { x: 716, y: 418 }
 
 /**
- * 树洞/石窟：厚土壁 C 形，黑只在洞口里，右侧开口接路。
- * e=路描边 D=路填充 n=近黑洞腔 N=洞口唇
+ * 树洞：左缘贴边，厚土壁，黑腔在内部，右侧开口接路。
+ * e=描边 D=填充 n=洞腔 N=洞唇
  */
 const caveRows = [
-  '..eeeeeeeeee....',
-  '.eDDDDDDDDDDee..',
-  'eDDDDDDDDDDDDe..',
-  'eDDDDDeeeeeDDDe.',
-  'eDDDDeennnneDDe.',
-  'eDDDDennnnnneeee',
-  'eDDDDnnnnnnN....',
-  'eDDDDnnnnnnN....',
-  'eDDDDnnnnnnN....',
-  'eDDDDnnnnnnN....',
-  'eDDDDennnnnneeee',
-  'eDDDDeennnneDDe.',
-  'eDDDDDeeeeeDDDe.',
-  'eDDDDDDDDDDDDe..',
-  '.eDDDDDDDDDDee..',
-  '..eeeeeeeeee....',
+  'eeeeeeeeee......',
+  'eDDDDDDDDDee....',
+  'eDDDDDDDDDDDe...',
+  'eDDDDDeeeeDDDe..',
+  'eDDDDennnnneDe..',
+  'eDDennnnnnnneeee',
+  'eDnnnnnnnnnN....',
+  'eDnnnnnnnnnN....',
+  'eDnnnnnnnnnN....',
+  'eDnnnnnnnnnN....',
+  'eDDennnnnnnneeee',
+  'eDDDDennnnneDe..',
+  'eDDDDDeeeeDDDe..',
+  'eDDDDDDDDDDDe...',
+  'eDDDDDDDDDee....',
+  'eeeeeeeeee......',
 ]
 
 /**
- * 空心木门：两柱 + 上门楣，中间完全空，怪从路走进去。
- * 不封底、不填开口，避免再画成木箱。
+ * 木门：两柱 + 上门楣 + 下槛，开口朝左（左侧路高全空）。
+ * 下槛在路下方，避免看起来像朝下开口。
  */
 const gateRows = [
-  '..eeeeeeeeeeee..',
-  '.eDDDDDDDDDDDDe.',
-  '.eDDDDDDDDDDDDe.',
-  '.eDDDee..eeDDDe.',
-  '.eDDe......eDDe.',
-  '.eDe........eDe.',
-  '.ee..........ee.',
+  '....eeeeeeeeee..',
+  '...eDDDDDDDDDDe.',
+  '...eDDDDDDDDDDe.',
+  '...eDDDeeeDDDDe.',
+  '...eDDe...eDDe..',
+  '...eDe.....eDe..',
+  '....e.........e.',
   '................',
   '................',
-  '.ee..........ee.',
-  '.eDe........eDe.',
-  '.eDDe......eDDe.',
-  '.eDDDee..eeDDDe.',
-  '.eDDDD....DDDDe.',
-  '.eDDDD....DDDDe.',
-  '..eeee....eeee..',
+  '....e.........e.',
+  '...eDe.....eDe..',
+  '...eDDe...eDDe..',
+  '...eDDDeeeDDDDe.',
+  '...eDDDDDDDDDDe.',
+  '...eDDDDDDDDDDe.',
+  '....eeeeeeeeee..',
 ]
 
-let caveSprite: SpriteCanvas | null = null
+let caveBack: SpriteCanvas | null = null
+let caveFront: SpriteCanvas | null = null
 let gateSprite: SpriteCanvas | null = null
 
 function charColor(ch: string, wx: number, wy: number): string | null {
@@ -78,7 +79,12 @@ function charColor(ch: string, wx: number, wy: number): string | null {
   }
 }
 
-function paintCharmap(rows: string[], originX: number, originY: number): SpriteCanvas {
+function paintCharmap(
+  rows: string[],
+  originX: number,
+  originY: number,
+  keep: string,
+): SpriteCanvas {
   const px = ROAD_PX
   const canvas = document.createElement('canvas')
   canvas.width = rows[0].length * px
@@ -87,7 +93,9 @@ function paintCharmap(rows: string[], originX: number, originY: number): SpriteC
   for (let y = 0; y < rows.length; y++) {
     const row = rows[y]
     for (let x = 0; x < row.length; x++) {
-      const color = charColor(row[x], originX + x * px, originY + y * px)
+      const ch = row[x]
+      if (!keep.includes(ch)) continue
+      const color = charColor(ch, originX + x * px, originY + y * px)
       if (!color) continue
       ctx.fillStyle = color
       ctx.fillRect(x * px, y * px, px, px)
@@ -96,13 +104,18 @@ function paintCharmap(rows: string[], originX: number, originY: number): SpriteC
   return canvas
 }
 
-function getCaveSprite(): SpriteCanvas {
-  if (!caveSprite) caveSprite = paintCharmap(caveRows, CAVE_ORIGIN.x, CAVE_ORIGIN.y)
-  return caveSprite
+function getCaveBack(): SpriteCanvas {
+  if (!caveBack) caveBack = paintCharmap(caveRows, CAVE_ORIGIN.x, CAVE_ORIGIN.y, 'nN')
+  return caveBack
+}
+
+function getCaveFront(): SpriteCanvas {
+  if (!caveFront) caveFront = paintCharmap(caveRows, CAVE_ORIGIN.x, CAVE_ORIGIN.y, 'eD')
+  return caveFront
 }
 
 function getGateSprite(): SpriteCanvas {
-  if (!gateSprite) gateSprite = paintCharmap(gateRows, GATE_ORIGIN.x, GATE_ORIGIN.y)
+  if (!gateSprite) gateSprite = paintCharmap(gateRows, GATE_ORIGIN.x, GATE_ORIGIN.y, 'eD')
   return gateSprite
 }
 
@@ -118,13 +131,21 @@ function assertMaps(): void {
 }
 assertMaps()
 
-/** 土路两端接头：树洞口 / 空心木门（与路同色同线宽） */
-export function drawRoadTerminals(ctx: CanvasRenderingContext2D): void {
+/** 洞腔 + 门后火：画在怪下面，怪从黑洞里走出来 */
+export function drawRoadTerminalsBack(ctx: CanvasRenderingContext2D): void {
   ctx.save()
   ctx.imageSmoothingEnabled = false
-  ctx.drawImage(getCaveSprite(), CAVE_ORIGIN.x, CAVE_ORIGIN.y)
-  ctx.drawImage(getGateSprite(), GATE_ORIGIN.x, GATE_ORIGIN.y)
+  ctx.drawImage(getCaveBack(), CAVE_ORIGIN.x, CAVE_ORIGIN.y)
   drawIdleFire(ctx)
+  ctx.restore()
+}
+
+/** 洞壁 + 门框：画在怪上面，遮住洞壁上的穿模 */
+export function drawRoadTerminalsFront(ctx: CanvasRenderingContext2D): void {
+  ctx.save()
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(getCaveFront(), CAVE_ORIGIN.x, CAVE_ORIGIN.y)
+  ctx.drawImage(getGateSprite(), GATE_ORIGIN.x, GATE_ORIGIN.y)
   ctx.restore()
 }
 

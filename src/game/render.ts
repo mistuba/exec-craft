@@ -7,7 +7,7 @@ import {
   getTowerScale,
   getTowerSprite,
 } from '../art/sprites'
-import { drawGoalFireFlash as flashGoalFire, drawRoadTerminals } from '../art/sceneMarkers'
+import { drawGoalFireFlash as flashGoalFire, drawRoadTerminalsBack, drawRoadTerminalsFront } from '../art/sceneMarkers'
 import { activeDecorations } from '../config/mapDecorations'
 import { drawPixelSprite } from '../art/pixelArt'
 import { ENEMY_DEFS } from '../config/enemies'
@@ -34,12 +34,13 @@ export function drawGame(
   drawSkyBackdrop(ctx)
   drawTileMap(ctx)
   drawGrassDecor(ctx)
-  drawRoadTerminals(ctx)
+  drawRoadTerminalsBack(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
   drawCorpses(ctx, snap)
   drawEnemies(ctx, snap)
+  drawRoadTerminalsFront(ctx)
   drawProjectiles(ctx, snap)
   drawHitEffects(ctx, snap)
   drawFloats(ctx, snap)
