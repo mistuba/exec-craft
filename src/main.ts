@@ -4,6 +4,7 @@ import { LEVEL_NAME, MAP_H, MAP_W } from './config/level1'
 import { TOWER_DEFS, type TowerKind } from './config/towers'
 import * as audio from './game/audio'
 import { GameEngine } from './game/engine'
+import { fitPixelCanvas } from './game/canvasFit'
 import { drawGame } from './game/render'
 import { loadSave, updateSettings } from './game/save'
 
@@ -17,7 +18,7 @@ engine.speed = save.settings.speed
 app.innerHTML = `
   <header>
     <h1>奇幻塔防 · ${LEVEL_NAME}</h1>
-    <p>固定路线、草地放塔。漏怪 ${10} 个失败。放塔后自动退出建造模式；按住 Shift 可连续放置。</p>
+    <p>简易像素奇幻风 · 固定路线放塔。漏怪 ${10} 个失败。放塔后自动退出建造；Shift 连续放置。</p>
   </header>
   <div class="layout">
     <div class="canvas-wrap" id="canvas-wrap">
@@ -38,7 +39,10 @@ app.innerHTML = `
           <div class="stat"><span>波次</span><strong id="wave">准备</strong></div>
           <div class="stat"><span>场上敌人</span><strong id="enemy-count">0</strong></div>
         </div>
-        <button type="button" class="primary" id="start-wave">开始下一波</button>
+        <div class="wave-actions">
+          <button type="button" class="primary" id="start-wave">开始下一波</button>
+          <button type="button" class="secondary" id="pause-game">暂停</button>
+        </div>
         <p class="hint" id="wave-hint">选塔后点草地建造；右键或 Esc 取消建造。点击已有塔可升级或出售。</p>
       </div>
       <div class="panel toolbar">
@@ -62,8 +66,12 @@ app.innerHTML = `
   </div>
 `
 
+const canvasWrap = document.querySelector<HTMLDivElement>('#canvas-wrap')!
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!
 const ctx = canvas.getContext('2d')!
+ctx.imageSmoothingEnabled = false
+fitPixelCanvas(canvas, canvasWrap, MAP_W, MAP_H)
+window.addEventListener('resize', () => fitPixelCanvas(canvas, canvasWrap, MAP_W, MAP_H))
 const towerBtns = document.querySelector<HTMLDivElement>('#tower-btns')!
 
 const kinds: TowerKind[] = ['bolt', 'frost', 'ember']
@@ -98,6 +106,7 @@ const leaksEl = document.querySelector<HTMLSpanElement>('#leaks')!
 const waveEl = document.querySelector<HTMLSpanElement>('#wave')!
 const enemyCountEl = document.querySelector<HTMLSpanElement>('#enemy-count')!
 const startWaveBtn = document.querySelector<HTMLButtonElement>('#start-wave')!
+const pauseBtn = document.querySelector<HTMLButtonElement>('#pause-game')!
 const upgradeBtn = document.querySelector<HTMLButtonElement>('#upgrade')!
 const sellBtn = document.querySelector<HTMLButtonElement>('#sell')!
 const selectionInfo = document.querySelector<HTMLDivElement>('#selection-info')!
@@ -129,7 +138,11 @@ function refreshUI(snap = lastSnap): void {
   enemyCountEl.textContent = String(snap.enemiesRemaining)
 
   const waveActive = snap.phase === 'wave' && snap.enemiesRemaining > 0
-  startWaveBtn.disabled = snap.phase === 'won' || snap.phase === 'lost' || waveActive
+  startWaveBtn.disabled =
+    snap.phase === 'won' || snap.phase === 'lost' || waveActive || snap.paused
+
+  pauseBtn.disabled = snap.phase === 'won' || snap.phase === 'lost'
+  pauseBtn.textContent = snap.paused ? '继续' : '暂停'
 
   if (snap.phase === 'won') {
     startWaveBtn.textContent = '已通关'
@@ -188,8 +201,9 @@ function refreshUI(snap = lastSnap): void {
     overlay.classList.add('hidden')
   }
 
-  waveHint.textContent =
-    snap.phase === 'prep' && snap.waveIndex >= 0
+  waveHint.textContent = snap.paused
+    ? '游戏已暂停，点击「继续」恢复。'
+    : snap.phase === 'prep' && snap.waveIndex >= 0
       ? '波次间隙可调整防线。准备好后点击「开始下一波」。'
       : '选塔后点草地建造；右键或 Esc 取消建造。点击已有塔可升级或出售。'
 }
@@ -248,6 +262,10 @@ window.addEventListener('keydown', (e) => {
 startWaveBtn.addEventListener('click', () => {
   audio.unlockAudio()
   engine.startNextWave()
+})
+
+pauseBtn.addEventListener('click', () => {
+  engine.togglePause()
 })
 
 upgradeBtn.addEventListener('click', () => engine.tryUpgrade())

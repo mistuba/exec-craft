@@ -1,11 +1,6 @@
 import { ENEMY_DEFS, LEVEL_WAVES, type EnemyKind } from '../config/enemies'
-import {
-  BUILD_GRID,
-  CELL,
-  MAX_LEAKS,
-  PATH_WAYPOINTS,
-  START_GOLD,
-} from '../config/level1'
+import { BUILD_GRID, CELL, MAX_LEAKS, START_GOLD } from '../config/level1'
+import { PATH_WAYPOINTS } from './path'
 import { TOWER_DEFS, type TowerKind } from '../config/towers'
 import * as audio from './audio'
 import { distanceAlongPath, pathLength, positionAtDistance } from './path'
@@ -40,6 +35,7 @@ export interface GameSnapshot {
   selectedTowerId: number | null
   buildKind: TowerKind | null
   time: number
+  paused: boolean
 }
 
 type Listener = (snap: GameSnapshot) => void
@@ -59,6 +55,7 @@ export class GameEngine {
   buildKind: TowerKind | null = null
   time = 0
   speed = 1
+  paused = false
 
   private spawnQueue: { kind: EnemyKind; at: number }[] = []
   private waveDoneAt = 0
@@ -96,7 +93,14 @@ export class GameEngine {
       selectedTowerId: this.selectedTowerId,
       buildKind: this.buildKind,
       time: this.time,
+      paused: this.paused,
     }
+  }
+
+  togglePause(): void {
+    if (this.phase === 'won' || this.phase === 'lost') return
+    this.paused = !this.paused
+    this.emit()
   }
 
   setBuildKind(kind: TowerKind | null): void {
@@ -201,6 +205,7 @@ export class GameEngine {
   }
 
   update(dt: number): void {
+    if (this.paused) return
     if (this.phase === 'won' || this.phase === 'lost') return
     const scaled = dt * this.speed
     this.time += scaled

@@ -18,9 +18,9 @@ import {
   COLS,
   MAP_H,
   MAP_W,
-  PATH_WAYPOINTS,
   ROWS,
 } from '../config/level1'
+import { PATH_WAYPOINTS } from './path'
 import { TOWER_DEFS } from '../config/towers'
 import type { GameSnapshot } from './engine'
 
@@ -35,7 +35,6 @@ export function drawGame(
 
   drawSkyBackdrop(ctx)
   drawTileMap(ctx)
-  drawPathDecor(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
@@ -45,8 +44,21 @@ export function drawGame(
   drawHitEffects(ctx, snap)
   drawFloats(ctx, snap)
   drawSpawnAndEnd(ctx)
+  if (snap.paused) drawPausedBanner(ctx)
 
   ctx.restore()
+}
+
+function drawPausedBanner(ctx: CanvasRenderingContext2D): void {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)'
+  ctx.fillRect(0, 0, MAP_W, MAP_H)
+  ctx.font = 'bold 20px ui-monospace, "Courier New", monospace'
+  ctx.textAlign = 'center'
+  ctx.fillStyle = '#dff9ff'
+  ctx.fillText('已暂停', MAP_W / 2, MAP_H / 2 - 8)
+  ctx.font = '12px system-ui, "Microsoft YaHei", sans-serif'
+  ctx.fillStyle = '#c8d6e5'
+  ctx.fillText('点击「继续」恢复', MAP_W / 2, MAP_H / 2 + 16)
 }
 
 function drawSkyBackdrop(ctx: CanvasRenderingContext2D): void {
@@ -92,18 +104,6 @@ function hasRoadNeighbor(row: number, col: number): boolean {
     if (r >= 0 && r < ROWS && c >= 0 && c < COLS && BUILD_GRID[r][c] === 0) return false
   }
   return true
-}
-
-function drawPathDecor(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = 'rgba(0,0,0,0.15)'
-  ctx.lineWidth = 3
-  ctx.lineCap = 'square'
-  ctx.beginPath()
-  ctx.moveTo(PATH_WAYPOINTS[0].x, PATH_WAYPOINTS[0].y)
-  for (let i = 1; i < PATH_WAYPOINTS.length; i++) {
-    ctx.lineTo(PATH_WAYPOINTS[i].x, PATH_WAYPOINTS[i].y)
-  }
-  ctx.stroke()
 }
 
 function drawRangeOverlays(
@@ -217,7 +217,7 @@ function drawEnemies(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
       ctx.fillRect(e.x - def.radius - 2, e.y - def.radius - 2, (def.radius + 2) * 2, (def.radius + 2) * 2)
     }
 
-    drawPixelSprite(ctx, sprite, e.x, e.y + bob, scale)
+    drawPixelSprite(ctx, sprite, Math.round(e.x), Math.round(e.y + bob), scale)
 
     const w = def.radius * 2 + 4
     const hpRatio = Math.max(0, e.hp / e.maxHp)

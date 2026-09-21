@@ -1,4 +1,6 @@
-import { PATH_WAYPOINTS } from '../config/level1'
+import { buildRoadWaypoints } from './roadPath'
+
+export const PATH_WAYPOINTS = buildRoadWaypoints()
 
 export function pathLength(): number {
   let len = 0

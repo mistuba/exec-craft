@@ -43,6 +43,8 @@ export function drawPixelSprite(
   ctx.save()
   ctx.imageSmoothingEnabled = false
   ctx.globalAlpha = alpha
-  ctx.drawImage(sprite, centerX - w / 2, centerY - h / 2, w, h)
+  const dx = Math.round(centerX - w / 2)
+  const dy = Math.round(centerY - h / 2)
+  ctx.drawImage(sprite, dx, dy, w, h)
   ctx.restore()
 }

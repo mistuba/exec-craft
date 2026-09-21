@@ -20,30 +20,6 @@ export const BUILD_GRID: number[][] = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 ]
 
-/** 敌人沿路径移动的拐点（像素坐标，道路中心） */
-export const PATH_WAYPOINTS: { x: number; y: number }[] = [
-  { x: 20, y: 60 },
-  { x: 140, y: 60 },
-  { x: 140, y: 100 },
-  { x: 60, y: 100 },
-  { x: 60, y: 180 },
-  { x: 260, y: 180 },
-  { x: 260, y: 140 },
-  { x: 620, y: 140 },
-  { x: 620, y: 220 },
-  { x: 540, y: 220 },
-  { x: 540, y: 300 },
-  { x: 660, y: 300 },
-  { x: 660, y: 260 },
-  { x: 700, y: 260 },
-  { x: 700, y: 420 },
-  { x: 100, y: 420 },
-  { x: 100, y: 340 },
-  { x: 380, y: 340 },
-  { x: 380, y: 380 },
-  { x: 720, y: 380 },
-]
-
 export const START_GOLD = 220
 export const MAX_LEAKS = 10
 export const LEVEL_NAME = '幽林小径'

@@ -74,8 +74,8 @@ header p {
 
 .canvas-wrap {
   position: relative;
-  width: 100%;
-  max-width: 720px;
+  width: 720px;
+  max-width: 100%;
   margin: 0 auto;
   border: 4px solid #2d2540;
   border-radius: 4px;
@@ -91,11 +91,23 @@ header p {
 
 canvas {
   display: block;
-  width: 100%;
-  height: auto;
   vertical-align: top;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
+}
+
+.wave-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wave-actions .primary {
+  flex: 1;
+}
+
+.wave-actions .secondary {
+  min-width: 72px;
+  padding: 10px 12px;
 }
 
 .panel {
