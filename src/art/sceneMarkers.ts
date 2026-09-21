@@ -8,11 +8,11 @@ const CAVITY_LIP = '#14110e'
 /** 约 2×2；左缘贴画布，开口朝右接到土路 */
 export const CAVE_ORIGIN = { x: 0, y: CELL - ROAD_PX * 4 }
 
-/** 约 2×2；开口朝左，略伸出右缘 */
+/** 约 2×2；开口朝左，贴在路尽头右侧 */
 export const GATE_ORIGIN = { x: 16 * CELL, y: 10 * CELL - ROAD_PX * 4 }
 
-/** 门后几像素火光 */
-export const GATE_FIRE = { x: 716, y: 418 }
+/** 门后几像素火光（开口里、路的右缘） */
+export const GATE_FIRE = { x: 714, y: 418 }
 
 /**
  * 树洞：左缘贴边，厚土壁，黑腔在内部，右侧开口接路。
@@ -38,26 +38,26 @@ const caveRows = [
 ]
 
 /**
- * 木门：两柱 + 上门楣 + 下槛，开口朝左（左侧路高全空）。
- * 下槛在路下方，避免看起来像朝下开口。
+ * 木门：上门楣 + 左右两柱。路的高度整行留空，怪从左边走进去。
+ * 南侧连成一座，避免再看成朝下的开口或套在路上的木环。
  */
 const gateRows = [
-  '....eeeeeeeeee..',
-  '...eDDDDDDDDDDe.',
-  '...eDDDDDDDDDDe.',
-  '...eDDDeeeDDDDe.',
-  '...eDDe...eDDe..',
-  '...eDe.....eDe..',
-  '....e.........e.',
+  '......eeeeeeeeee',
+  '.....eDDDDDDDDDe',
+  '.....eDDDDDDDDDe',
+  '.....eDDee.eDDDe',
+  '.....eDe.....eDe',
   '................',
   '................',
-  '....e.........e.',
-  '...eDe.....eDe..',
-  '...eDDe...eDDe..',
-  '...eDDDeeeDDDDe.',
-  '...eDDDDDDDDDDe.',
-  '...eDDDDDDDDDDe.',
-  '....eeeeeeeeee..',
+  '................',
+  '................',
+  '................',
+  '................',
+  '.....eDe.....eDe',
+  '.....eDDee.eDDDe',
+  '.....eDDDDDDDDDe',
+  '.....eDDDDDDDDDe',
+  '......eeeeeeeeee',
 ]
 
 let caveBack: SpriteCanvas | null = null
