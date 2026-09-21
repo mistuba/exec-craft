@@ -1,3 +1,16 @@
+import {
+  getEnemyScale,
+  getEnemySprite,
+  getTowerScale,
+  getTowerSprite,
+  SIGN_END,
+  SIGN_SPAWN,
+  TILE_GRASS_A,
+  TILE_GRASS_B,
+  TILE_ROAD,
+  TILE_ROAD_EDGE,
+} from '../art/sprites'
+import { drawPixelSprite } from '../art/pixelArt'
 import { ENEMY_DEFS } from '../config/enemies'
 import {
   BUILD_GRID,
@@ -17,11 +30,12 @@ export function drawGame(
   hoverCell: { col: number; row: number } | null,
 ): void {
   ctx.save()
+  ctx.imageSmoothingEnabled = false
   ctx.clearRect(0, 0, MAP_W, MAP_H)
 
-  drawBackground(ctx)
-  drawRoadCells(ctx)
-  drawPath(ctx)
+  drawSkyBackdrop(ctx)
+  drawTileMap(ctx)
+  drawPathDecor(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
@@ -35,38 +49,61 @@ export function drawGame(
   ctx.restore()
 }
 
-function drawBackground(ctx: CanvasRenderingContext2D): void {
+function drawSkyBackdrop(ctx: CanvasRenderingContext2D): void {
   const g = ctx.createLinearGradient(0, 0, 0, MAP_H)
-  g.addColorStop(0, '#1a2f1a')
-  g.addColorStop(1, '#0f1a12')
+  g.addColorStop(0, '#2a3d5c')
+  g.addColorStop(0.35, '#1e3328')
+  g.addColorStop(1, '#142218')
   ctx.fillStyle = g
   ctx.fillRect(0, 0, MAP_W, MAP_H)
+}
 
+function drawTileMap(ctx: CanvasRenderingContext2D): void {
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       const x = col * CELL
       const y = row * CELL
-      if (BUILD_GRID[row][col] === 0) {
-        ctx.fillStyle = (row + col) % 2 === 0 ? '#243d28' : '#203522'
-        ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2)
+      const isRoad = BUILD_GRID[row][col] === 1
+      const sprite = isRoad
+        ? hasRoadNeighbor(row, col)
+          ? TILE_ROAD
+          : TILE_ROAD_EDGE
+        : (row + col) % 2 === 0
+          ? TILE_GRASS_A
+          : TILE_GRASS_B
+      ctx.drawImage(sprite, x, y, CELL, CELL)
+      if (!isRoad && (row * 7 + col * 11) % 23 === 0) {
+        drawPixelSprite(ctx, TILE_GRASS_B, x + CELL / 2, y + CELL / 2, 0.55, 0.35)
       }
     }
   }
 }
 
-function drawRoadCells(ctx: CanvasRenderingContext2D): void {
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      if (BUILD_GRID[row][col] === 1) {
-        const x = col * CELL
-        const y = row * CELL
-        ctx.fillStyle = '#5c4a32'
-        ctx.fillRect(x, y, CELL, CELL)
-        ctx.strokeStyle = '#3d2f1f'
-        ctx.strokeRect(x + 0.5, y + 0.5, CELL - 1, CELL - 1)
-      }
-    }
+function hasRoadNeighbor(row: number, col: number): boolean {
+  const dirs = [
+    [0, 1],
+    [0, -1],
+    [1, 0],
+    [-1, 0],
+  ]
+  for (const [dr, dc] of dirs) {
+    const r = row + dr
+    const c = col + dc
+    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && BUILD_GRID[r][c] === 0) return false
   }
+  return true
+}
+
+function drawPathDecor(ctx: CanvasRenderingContext2D): void {
+  ctx.strokeStyle = 'rgba(0,0,0,0.15)'
+  ctx.lineWidth = 3
+  ctx.lineCap = 'square'
+  ctx.beginPath()
+  ctx.moveTo(PATH_WAYPOINTS[0].x, PATH_WAYPOINTS[0].y)
+  for (let i = 1; i < PATH_WAYPOINTS.length; i++) {
+    ctx.lineTo(PATH_WAYPOINTS[i].x, PATH_WAYPOINTS[i].y)
+  }
+  ctx.stroke()
 }
 
 function drawRangeOverlays(
@@ -81,7 +118,7 @@ function drawRangeOverlays(
       const stats = def.levels[0]
       const cx = hover.col * CELL + CELL / 2
       const cy = hover.row * CELL + CELL / 2
-      drawRangeCircle(ctx, cx, cy, stats.range, 'rgba(46, 204, 113, 0.1)', 'rgba(46, 204, 113, 0.65)')
+      drawRangeCircle(ctx, cx, cy, stats.range, 'rgba(88, 214, 141, 0.12)', 'rgba(88, 214, 141, 0.85)')
     }
   }
 
@@ -89,7 +126,7 @@ function drawRangeOverlays(
   if (sel) {
     const def = TOWER_DEFS[sel.kind]
     const stats = def.levels[sel.level - 1]
-    drawRangeCircle(ctx, sel.x, sel.y, stats.range, 'rgba(241, 196, 15, 0.12)', 'rgba(241, 196, 15, 0.75)')
+    drawRangeCircle(ctx, sel.x, sel.y, stats.range, 'rgba(241, 196, 15, 0.14)', 'rgba(241, 196, 15, 0.9)')
   }
 }
 
@@ -107,7 +144,7 @@ function drawRangeCircle(
   ctx.fill()
   ctx.strokeStyle = stroke
   ctx.lineWidth = 2
-  ctx.setLineDash([6, 5])
+  ctx.setLineDash([5, 4])
   ctx.stroke()
   ctx.setLineDash([])
 }
@@ -122,97 +159,48 @@ function drawBuildHover(
   const y = hover.row * CELL
   const occupied = snap.towers.some((t) => t.col === hover.col && t.row === hover.row)
   if (snap.buildKind && !occupied) {
-    ctx.fillStyle = 'rgba(46, 204, 113, 0.28)'
+    ctx.fillStyle = 'rgba(88, 214, 141, 0.35)'
     ctx.fillRect(x, y, CELL, CELL)
-    ctx.strokeStyle = 'rgba(46, 204, 113, 0.9)'
+    ctx.strokeStyle = '#58d68d'
     ctx.lineWidth = 2
-    ctx.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4)
+    ctx.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2)
   } else if (occupied) {
-    ctx.fillStyle = 'rgba(241, 196, 15, 0.22)'
+    ctx.fillStyle = 'rgba(241, 196, 15, 0.28)'
     ctx.fillRect(x, y, CELL, CELL)
   }
-}
-
-function drawPath(ctx: CanvasRenderingContext2D): void {
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
-  ctx.lineWidth = 22
-  ctx.strokeStyle = '#8b7355'
-  ctx.beginPath()
-  ctx.moveTo(PATH_WAYPOINTS[0].x, PATH_WAYPOINTS[0].y)
-  for (let i = 1; i < PATH_WAYPOINTS.length; i++) {
-    ctx.lineTo(PATH_WAYPOINTS[i].x, PATH_WAYPOINTS[i].y)
-  }
-  ctx.stroke()
-
-  ctx.lineWidth = 10
-  ctx.strokeStyle = '#c4a574'
-  ctx.stroke()
 }
 
 function drawTowers(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   for (const t of snap.towers) {
-    const def = TOWER_DEFS[t.kind]
-    const r = 14
-    ctx.fillStyle = def.color
-    ctx.strokeStyle = def.accent
-    ctx.lineWidth = 3
+    const sprite = getTowerSprite(t.kind)
+    const scale = getTowerScale(t.level)
     if (t.id === snap.selectedTowerId) {
-      ctx.shadowColor = '#f1c40f'
-      ctx.shadowBlur = 12
+      ctx.fillStyle = 'rgba(241, 196, 15, 0.25)'
+      ctx.fillRect(t.col * CELL, t.row * CELL, CELL, CELL)
     }
-    if (t.kind === 'bolt') {
-      ctx.beginPath()
-      ctx.moveTo(t.x, t.y - r)
-      ctx.lineTo(t.x + r, t.y + r * 0.8)
-      ctx.lineTo(t.x - r, t.y + r * 0.8)
-      ctx.closePath()
-      ctx.fill()
-      ctx.stroke()
-    } else if (t.kind === 'frost') {
-      ctx.beginPath()
-      for (let i = 0; i < 6; i++) {
-        const a = (Math.PI / 3) * i - Math.PI / 6
-        const px = t.x + Math.cos(a) * r
-        const py = t.y + Math.sin(a) * r
-        if (i === 0) ctx.moveTo(px, py)
-        else ctx.lineTo(px, py)
-      }
-      ctx.closePath()
-      ctx.fill()
-      ctx.stroke()
-    } else {
-      ctx.beginPath()
-      ctx.arc(t.x, t.y, r, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.stroke()
-    }
-    ctx.shadowBlur = 0
-    ctx.fillStyle = '#fff'
-    ctx.font = 'bold 12px system-ui, sans-serif'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    ctx.fillText(def.icon, t.x, t.y)
+    drawPixelSprite(ctx, sprite, t.x, t.y - 2, scale)
     if (t.level === 2) {
-      ctx.fillStyle = '#f1c40f'
-      ctx.beginPath()
-      ctx.arc(t.x + 10, t.y - 12, 4, 0, Math.PI * 2)
-      ctx.fill()
+      drawPixelStar(ctx, t.x + 10, t.y - 18)
     }
   }
 }
 
+function drawPixelStar(ctx: CanvasRenderingContext2D, x: number, y: number): void {
+  ctx.fillStyle = '#f1c40f'
+  ctx.fillRect(x - 2, y, 4, 4)
+  ctx.fillRect(x, y - 2, 4, 4)
+  ctx.fillStyle = '#fff3a3'
+  ctx.fillRect(x, y, 2, 2)
+}
+
 function drawCorpses(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   for (const c of snap.corpses) {
-    const def = ENEMY_DEFS[c.kind]
+    const sprite = getEnemySprite(c.kind)
     const alpha = Math.max(0, c.life / c.maxLife)
-    const scale = 0.55 + 0.45 * alpha
-    ctx.globalAlpha = alpha * 0.85
-    ctx.fillStyle = '#2c2c2c'
-    ctx.beginPath()
-    ctx.ellipse(c.x, c.y + 4, def.radius * scale, def.radius * 0.45 * scale, 0, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.globalAlpha = 1
+    const scale = getEnemyScale(c.kind) * (0.5 + 0.35 * alpha)
+    drawPixelSprite(ctx, sprite, c.x, c.y + 6, scale, alpha * 0.55)
+    ctx.fillStyle = `rgba(0,0,0,${0.25 * alpha})`
+    ctx.fillRect(c.x - 10, c.y + 8, 20, 4)
   }
 }
 
@@ -220,20 +208,23 @@ function drawEnemies(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   for (const e of snap.enemies) {
     const def = ENEMY_DEFS[e.kind]
     const slowed = e.slowUntil > snap.time
-    ctx.fillStyle = slowed ? '#a8d8ff' : def.color
-    ctx.strokeStyle = def.accent
-    ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(e.x, e.y, def.radius, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.stroke()
+    const bob = Math.sin(snap.time * 8 + e.id) * 1.5
+    const sprite = getEnemySprite(e.kind)
+    const scale = getEnemyScale(e.kind)
 
-    const w = def.radius * 2
+    if (slowed) {
+      ctx.fillStyle = 'rgba(133, 216, 255, 0.35)'
+      ctx.fillRect(e.x - def.radius - 2, e.y - def.radius - 2, (def.radius + 2) * 2, (def.radius + 2) * 2)
+    }
+
+    drawPixelSprite(ctx, sprite, e.x, e.y + bob, scale)
+
+    const w = def.radius * 2 + 4
     const hpRatio = Math.max(0, e.hp / e.maxHp)
-    ctx.fillStyle = '#222'
-    ctx.fillRect(e.x - w / 2, e.y - def.radius - 8, w, 4)
-    ctx.fillStyle = hpRatio > 0.35 ? '#2ecc71' : '#e74c3c'
-    ctx.fillRect(e.x - w / 2, e.y - def.radius - 8, w * hpRatio, 4)
+    ctx.fillStyle = '#1a1423'
+    ctx.fillRect(e.x - w / 2, e.y - def.radius - 12, w, 5)
+    ctx.fillStyle = hpRatio > 0.35 ? '#58d68d' : '#e74c3c'
+    ctx.fillRect(e.x - w / 2 + 1, e.y - def.radius - 11, (w - 2) * hpRatio, 3)
   }
 }
 
@@ -247,38 +238,19 @@ function drawProjectiles(ctx: CanvasRenderingContext2D, snap: GameSnapshot): voi
     const ty = p.fromY + (p.toY - p.fromY) * Math.max(0, p.progress - tail)
 
     ctx.strokeStyle = def.color
-    ctx.lineWidth = p.towerKind === 'bolt' ? 3 : p.towerKind === 'frost' ? 4 : 5
-    ctx.globalAlpha = 0.85
+    ctx.lineWidth = p.towerKind === 'bolt' ? 2 : 3
+    ctx.globalAlpha = 0.9
     ctx.beginPath()
     ctx.moveTo(tx, ty)
     ctx.lineTo(x, y)
     ctx.stroke()
     ctx.globalAlpha = 1
 
-    ctx.shadowColor = def.color
-    ctx.shadowBlur = p.towerKind === 'ember' ? 14 : 8
     ctx.fillStyle = def.color
-    if (p.towerKind === 'bolt') {
-      ctx.beginPath()
-      ctx.moveTo(x + 6, y)
-      ctx.lineTo(x - 4, y - 4)
-      ctx.lineTo(x - 2, y)
-      ctx.lineTo(x - 4, y + 4)
-      ctx.closePath()
-      ctx.fill()
-    } else if (p.towerKind === 'frost') {
-      ctx.beginPath()
-      ctx.arc(x, y, 5, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.strokeStyle = '#dff9ff'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
-    } else {
-      ctx.beginPath()
-      ctx.arc(x, y, 6, 0, Math.PI * 2)
-      ctx.fill()
-    }
-    ctx.shadowBlur = 0
+    const s = p.towerKind === 'ember' ? 5 : 4
+    ctx.fillRect(Math.round(x) - s / 2, Math.round(y) - s / 2, s, s)
+    ctx.fillStyle = '#fff8'
+    ctx.fillRect(Math.round(x) - 1, Math.round(y) - 1, 2, 2)
   }
 }
 
@@ -290,18 +262,25 @@ function drawHitEffects(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void
     ctx.globalAlpha = 1 - t
     ctx.strokeStyle = def.color
     ctx.lineWidth = 2
-    ctx.beginPath()
-    ctx.arc(h.x, h.y, r, 0, Math.PI * 2)
-    ctx.stroke()
+    const steps = 8
+    for (let i = 0; i < steps; i++) {
+      const a = (Math.PI * 2 * i) / steps
+      const px = h.x + Math.cos(a) * r
+      const py = h.y + Math.sin(a) * r
+      ctx.fillStyle = def.color
+      ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, 3, 3)
+    }
     ctx.globalAlpha = 1
   }
 }
 
 function drawFloats(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
-  ctx.font = 'bold 13px system-ui, sans-serif'
+  ctx.font = 'bold 11px ui-monospace, "Courier New", monospace'
   ctx.textAlign = 'center'
   for (const f of snap.floats) {
     ctx.globalAlpha = Math.min(1, f.life)
+    ctx.fillStyle = '#1a1423'
+    ctx.fillText(f.text, f.x + 1, f.y - (1.2 - f.life) * 28 + 1)
     ctx.fillStyle = f.color
     ctx.fillText(f.text, f.x, f.y - (1.2 - f.life) * 28)
     ctx.globalAlpha = 1
@@ -311,9 +290,11 @@ function drawFloats(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
 function drawSpawnAndEnd(ctx: CanvasRenderingContext2D): void {
   const s = PATH_WAYPOINTS[0]
   const e = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 1]
-  ctx.font = '11px system-ui, sans-serif'
-  ctx.fillStyle = '#a8e6cf'
-  ctx.fillText('入口', s.x, s.y - 18)
+  drawPixelSprite(ctx, SIGN_SPAWN, s.x, s.y - 22, 2.2)
+  drawPixelSprite(ctx, SIGN_END, e.x - 8, e.y - 8, 2.2)
+  ctx.font = 'bold 10px ui-monospace, "Courier New", monospace'
+  ctx.fillStyle = '#dff9ff'
+  ctx.fillText('入口', s.x, s.y - 38)
   ctx.fillStyle = '#ffb3b3'
-  ctx.fillText('营地', e.x - 24, e.y + 4)
+  ctx.fillText('营地', e.x - 8, e.y - 26)
 }

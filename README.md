@@ -35,4 +35,5 @@ npm run preview
 
 - Vite + TypeScript + Canvas 2D
 - 音效：Web Audio API 合成（无外链音频文件）
-- 字体：系统字体（苹方 / 微软雅黑等）
+- 画面：内置简易像素精灵（草地/土路/塔/怪），`image-rendering: pixelated` 保持清晰块面
+- 字体：系统 UI + 等宽数字飘字；界面中文
