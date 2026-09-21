@@ -1,9 +1,13 @@
 import { ENEMY_DEFS, LEVEL_WAVES, type EnemyKind } from '../config/enemies'
 import { BUILD_GRID, CELL, MAX_LEAKS, START_GOLD } from '../config/level1'
-import { PATH_WAYPOINTS } from './path'
 import { TOWER_DEFS, type TowerKind } from '../config/towers'
 import * as audio from './audio'
-import { distanceAlongPath, pathLength, positionAtDistance } from './path'
+import {
+  goalAnchor,
+  pathLength,
+  positionAtDistance,
+  SPAWN_BACK,
+} from './path'
 import { markLevelProgress } from './save'
 import type {
   Corpse,
@@ -36,6 +40,7 @@ export interface GameSnapshot {
   buildKind: TowerKind | null
   time: number
   paused: boolean
+  goalFlashUntil: number
 }
 
 type Listener = (snap: GameSnapshot) => void
@@ -56,6 +61,7 @@ export class GameEngine {
   time = 0
   speed = 1
   paused = false
+  goalFlashUntil = 0
 
   private spawnQueue: { kind: EnemyKind; at: number }[] = []
   private waveDoneAt = 0
@@ -94,6 +100,7 @@ export class GameEngine {
       buildKind: this.buildKind,
       time: this.time,
       paused: this.paused,
+      goalFlashUntil: this.goalFlashUntil,
     }
   }
 
@@ -221,12 +228,12 @@ export class GameEngine {
       const def = ENEMY_DEFS[e.kind]
       const slow = e.slowUntil > this.time ? e.slowFactor : 1
       const move = def.speed * slow * scaled
-      let dist = distanceAlongPath(e.pathIndex, e.pathProgress) + move
-      if (dist >= this.totalPath) {
+      e.pathDist += move
+      if (e.pathDist >= this.totalPath) {
         e.hp = 0
         continue
       }
-      const pos = positionAtDistance(dist)
+      const pos = positionAtDistance(e.pathDist)
       e.pathIndex = pos.segIndex
       e.pathProgress = pos.t
       e.x = pos.x
@@ -235,9 +242,12 @@ export class GameEngine {
 
     this.enemies = this.enemies.filter((e) => {
       if (e.hp <= 0) {
-        if (distanceAlongPath(e.pathIndex, e.pathProgress) >= this.totalPath - 0.5) {
+        if (e.pathDist >= this.totalPath - 0.5) {
           this.leaks++
           audio.playLeak()
+          const g = goalAnchor()
+          this.goalFlashUntil = this.time + 0.55
+          this.addFloat(g.x, g.y - 22, '-1', '#ff9a6b')
           if (this.leaks >= MAX_LEAKS) this.endLost()
         } else {
           const def = ENEMY_DEFS[e.kind]
@@ -330,17 +340,19 @@ export class GameEngine {
 
   private spawnEnemy(kind: EnemyKind): void {
     const def = ENEMY_DEFS[kind]
-    const start = PATH_WAYPOINTS[0]
+    const dist = -SPAWN_BACK
+    const pos = positionAtDistance(dist)
     this.enemies.push({
       id: nextId++,
       kind,
       hp: def.maxHp,
       maxHp: def.maxHp,
       speed: def.speed,
-      pathIndex: 0,
-      pathProgress: 0,
-      x: start.x,
-      y: start.y,
+      pathIndex: pos.segIndex,
+      pathProgress: pos.t,
+      pathDist: dist,
+      x: pos.x,
+      y: pos.y,
       slowUntil: 0,
       slowFactor: 1,
     })
@@ -352,7 +364,7 @@ export class GameEngine {
     for (const e of this.enemies) {
       const d = Math.hypot(e.x - tower.x, e.y - tower.y)
       if (d > range) continue
-      const along = distanceAlongPath(e.pathIndex, e.pathProgress)
+      const along = e.pathDist
       if (along > bestDist) {
         bestDist = along
         best = e

@@ -6,9 +6,8 @@ import {
   getEnemySprite,
   getTowerScale,
   getTowerSprite,
-  SCENE_CAMP,
-  SCENE_SPAWN,
 } from '../art/sprites'
+import { getCampMarker, getHoleMarker } from '../art/sceneMarkers'
 import { activeDecorations } from '../config/mapDecorations'
 import { drawPixelSprite } from '../art/pixelArt'
 import { ENEMY_DEFS } from '../config/enemies'
@@ -20,7 +19,12 @@ import {
   MAP_W,
   ROWS,
 } from '../config/level1'
-import { PATH_WAYPOINTS } from './path'
+import {
+  goalAnchor,
+  PATH_WAYPOINTS,
+  pathTangentAtEnd,
+  pathTangentAtStart,
+} from './path'
 import { TOWER_DEFS } from '../config/towers'
 import type { GameSnapshot } from './engine'
 
@@ -44,7 +48,7 @@ export function drawGame(
   drawProjectiles(ctx, snap)
   drawHitEffects(ctx, snap)
   drawFloats(ctx, snap)
-  drawSpawnAndEnd(ctx)
+  drawSpawnAndEnd(ctx, snap)
   if (snap.paused) drawPausedBanner(ctx)
 
   ctx.restore()
@@ -300,18 +304,37 @@ function drawFloats(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   }
 }
 
-function drawSpawnAndEnd(ctx: CanvasRenderingContext2D): void {
-  const s = PATH_WAYPOINTS[0]
-  const e = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 1]
-  const pulse = 0.55 + Math.sin(performance.now() / 420) * 0.15
-  ctx.fillStyle = `rgba(111, 216, 106, ${0.12 * pulse})`
+function drawSpawnAndEnd(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
+  const start = PATH_WAYPOINTS[0]
+  const tanIn = pathTangentAtStart()
+  const hx = start.x - tanIn.dx * 20
+  const hy = start.y - tanIn.dy * 20 - 4
+
+  ctx.fillStyle = 'rgba(8, 6, 4, 0.35)'
   ctx.beginPath()
-  ctx.arc(s.x, s.y - 6, 28 + pulse * 6, 0, Math.PI * 2)
+  ctx.ellipse(hx, hy + 6, 22, 16, 0, 0, Math.PI * 2)
   ctx.fill()
-  drawPixelSprite(ctx, SCENE_SPAWN, s.x, s.y - 10, 2.05)
-  ctx.fillStyle = 'rgba(255, 160, 80, 0.2)'
+  drawPixelSprite(ctx, getHoleMarker(), hx, hy, 2.2)
+
+  const tanEnd = pathTangentAtEnd()
+  const goal = goalAnchor()
+  const cx = goal.x + tanEnd.dx * 10
+  const cy = goal.y + tanEnd.dy * 10 - 10
+  const flash = snap.time < snap.goalFlashUntil
+
+  ctx.fillStyle = 'rgba(200, 90, 40, 0.14)'
   ctx.beginPath()
-  ctx.arc(e.x - 6, e.y - 14, 22, 0, Math.PI * 2)
+  ctx.arc(cx, cy + 8, 28, 0, Math.PI * 2)
   ctx.fill()
-  drawPixelSprite(ctx, SCENE_CAMP, e.x - 10, e.y - 18, 2.05)
+
+  drawPixelSprite(ctx, getCampMarker(), cx, cy, 2.25)
+
+  if (flash) {
+    ctx.fillStyle = 'rgba(255, 150, 70, 0.45)'
+    ctx.beginPath()
+    ctx.arc(cx, cy + 6, 24, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.fillStyle = '#ffb07a'
+    ctx.fillRect(Math.round(cx - 3), Math.round(cy + 4), 6, 6)
+  }
 }

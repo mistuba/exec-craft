@@ -9,6 +9,7 @@ export interface Enemy {
   speed: number
   pathIndex: number
   pathProgress: number
+  pathDist: number
   x: number
   y: number
   slowUntil: number

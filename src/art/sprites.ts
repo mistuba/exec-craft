@@ -164,54 +164,6 @@ const enemySprites: Record<EnemyKind, SpriteCanvas> = {
   ),
 }
 
-/** 森林入口：石门 + 绿光 */
-export const SCENE_SPAWN = buildSprite(
-  [
-    '........oooooooo........',
-    '......ooGGGGGGGGoo......',
-    '.....oGGLLLLLLLLGGo.....',
-    '....oGLLFFFFFFLLGGo....',
-    '....oGLFFFFFFFFLGGo....',
-    '....oGLFFFFFFFFLGGo....',
-    '....oGLLFFFFFFLLGGo....',
-    '.....oGGLLLLLLGGGo.....',
-    '......ooWWWWWWoo......',
-    '.....oWWWWWWWWWWo.....',
-    '....oWWWWWWWWWWWWo....',
-    '....oWWo......oWWo....',
-    '....oWWo......oWWo....',
-    '....oWWWWWWWWWWWWo....',
-    '.....oooooooooooo.....',
-    '........................',
-  ],
-  P,
-  'scene-spawn',
-)
-
-/** 终点营地：帐篷 + 篝火 */
-export const SCENE_CAMP = buildSprite(
-  [
-    '........................',
-    '.........oooooo.........',
-    '........oYYYYYo........',
-    '.......oYyyyyYo.......',
-    '......oYyRRyyYo......',
-    '......oYyRRyyYo......',
-    '.......oyyyyyo.......',
-    '........ooooo........',
-    '......oooooooo......',
-    '.....oAAAAAAAAo.....',
-    '....oAAAAAAAAAAo....',
-    '...oAAAAo..oAAAAo...',
-    '...oAAAAo..oAAAAo...',
-    '....oAAAAAAAAo....',
-    '.....ooooooooo.....',
-    '........................',
-  ],
-  P,
-  'scene-camp',
-)
-
 export function getTowerSprite(kind: TowerKind): SpriteCanvas {
   return towerSprites[kind]
 }
