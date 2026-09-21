@@ -21,6 +21,7 @@ app.innerHTML = `
     <p>简易像素奇幻风 · 固定路线放塔。漏怪 ${10} 个失败。放塔后自动退出建造；Shift 连续放置。</p>
   </header>
   <div class="layout">
+    <div class="map-column">
     <div class="canvas-wrap" id="canvas-wrap">
       <canvas id="game" width="${MAP_W}" height="${MAP_H}" aria-label="游戏画布"></canvas>
       <div class="overlay hidden" id="overlay">
@@ -30,6 +31,7 @@ app.innerHTML = `
           <button type="button" class="primary" id="overlay-btn">确定</button>
         </div>
       </div>
+    </div>
     </div>
     <aside class="side">
       <div class="panel stats-panel">
@@ -66,12 +68,14 @@ app.innerHTML = `
   </div>
 `
 
+const mapColumn = document.querySelector<HTMLDivElement>('.map-column')!
 const canvasWrap = document.querySelector<HTMLDivElement>('#canvas-wrap')!
 const canvas = document.querySelector<HTMLCanvasElement>('#game')!
 const ctx = canvas.getContext('2d')!
 ctx.imageSmoothingEnabled = false
-fitPixelCanvas(canvas, canvasWrap, MAP_W, MAP_H)
-window.addEventListener('resize', () => fitPixelCanvas(canvas, canvasWrap, MAP_W, MAP_H))
+const refitCanvas = () => fitPixelCanvas(canvas, canvasWrap, MAP_W, MAP_H, mapColumn)
+refitCanvas()
+window.addEventListener('resize', refitCanvas)
 const towerBtns = document.querySelector<HTMLDivElement>('#tower-btns')!
 
 const kinds: TowerKind[] = ['bolt', 'frost', 'ember']

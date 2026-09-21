@@ -5,9 +5,9 @@ import { buildSprite, type SpriteCanvas } from './pixelArt'
 const P = {
   o: '#1a1423',
   O: '#2d2540',
-  G: '#4a9e45',
-  g: '#3d7f3a',
-  L: '#5cb85c',
+  G: '#52b84e',
+  g: '#2f6e32',
+  L: '#6fd86a',
   T: '#8b6914',
   t: '#c4a35a',
   s: '#6e5a3a',
@@ -47,7 +47,7 @@ export const TILE_GRASS_A = buildSprite(
     'gGLgGgGg',
   ],
   P,
-  'grass-a',
+  'grass-a-v2',
 )
 
 export const TILE_GRASS_B = buildSprite(
@@ -62,7 +62,7 @@ export const TILE_GRASS_B = buildSprite(
     'gGgGgGGg',
   ],
   P,
-  'grass-b',
+  'grass-b-v2',
 )
 
 export const TILE_ROAD = buildSprite(

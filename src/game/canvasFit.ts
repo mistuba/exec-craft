@@ -1,14 +1,27 @@
-/** 画布按整数倍缩放，避免像素被浏览器非整数缩放模糊 */
+/** 画布缩放：宽屏用整数倍放大；窄屏缩小以完整显示，避免右侧被裁切 */
 export function fitPixelCanvas(
   canvas: HTMLCanvasElement,
   wrap: HTMLElement,
   logicalW: number,
   logicalH: number,
+  widthSource?: HTMLElement,
 ): number {
-  const maxW = wrap.clientWidth || logicalW
-  const scale = Math.max(1, Math.floor(maxW / logicalW))
-  const displayW = logicalW * scale
-  const displayH = logicalH * scale
+  const maxW = (widthSource ?? wrap.parentElement ?? wrap).clientWidth || logicalW
+  const ratio = maxW / logicalW
+
+  let scale: number
+  let displayW: number
+  let displayH: number
+
+  if (ratio >= 1) {
+    scale = Math.max(1, Math.floor(ratio))
+    displayW = logicalW * scale
+    displayH = logicalH * scale
+  } else {
+    scale = ratio
+    displayW = maxW
+    displayH = logicalH * ratio
+  }
 
   canvas.width = logicalW
   canvas.height = logicalH
