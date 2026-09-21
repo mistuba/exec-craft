@@ -50,6 +50,36 @@ export const TILE_GRASS_A = buildSprite(
   'grass-soft-v3',
 )
 
+export const TILE_ROAD = buildSprite(
+  [
+    'tttttttt',
+    'tssssstt',
+    'tswwwwst',
+    'tswwwwst',
+    'tswwwwst',
+    'tswwwwst',
+    'tssssstt',
+    'tttttttt',
+  ],
+  P,
+  'road',
+)
+
+export const TILE_ROAD_EDGE = buildSprite(
+  [
+    'otttttto',
+    'twwwwwwt',
+    'twTwwTwW',
+    'twWwwWwT',
+    'twTwwTwW',
+    'twWwwWwT',
+    'twwwwwwt',
+    'otttttto',
+  ],
+  P,
+  'road-edge',
+)
+
 const towerSprites: Record<TowerKind, SpriteCanvas> = {
   bolt: buildSprite(
     [
