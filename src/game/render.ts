@@ -1,3 +1,5 @@
+import { getDebrisSprite } from '../art/debrisSprites'
+import { roadPadVariant } from '../art/roadPads'
 import {
   getEnemyScale,
   getEnemySprite,
@@ -6,9 +8,8 @@ import {
   SCENE_CAMP,
   SCENE_SPAWN,
   TILE_GRASS_A,
-  TILE_ROAD,
-  TILE_ROAD_EDGE,
 } from '../art/sprites'
+import { activeDecorations } from '../config/mapDecorations'
 import { drawPixelSprite } from '../art/pixelArt'
 import { ENEMY_DEFS } from '../config/enemies'
 import {
@@ -34,6 +35,7 @@ export function drawGame(
 
   drawSkyBackdrop(ctx)
   drawTileMap(ctx)
+  drawGrassDecor(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
@@ -74,30 +76,26 @@ function drawTileMap(ctx: CanvasRenderingContext2D): void {
     for (let col = 0; col < COLS; col++) {
       const x = col * CELL
       const y = row * CELL
-      const isRoad = BUILD_GRID[row][col] === 1
-      const sprite = isRoad
-        ? hasRoadNeighbor(row, col)
-          ? TILE_ROAD
-          : TILE_ROAD_EDGE
-        : TILE_GRASS_A
-      ctx.drawImage(sprite, x, y, CELL, CELL)
+      ctx.drawImage(TILE_GRASS_A, x, y, CELL, CELL)
+    }
+  }
+
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      if (BUILD_GRID[row][col] !== 1) continue
+      const x = col * CELL + CELL / 2
+      const y = row * CELL + CELL / 2
+      const pad = roadPadVariant(row, col)
+      drawPixelSprite(ctx, pad, x, y + 1, 3.15)
     }
   }
 }
 
-function hasRoadNeighbor(row: number, col: number): boolean {
-  const dirs = [
-    [0, 1],
-    [0, -1],
-    [1, 0],
-    [-1, 0],
-  ]
-  for (const [dr, dc] of dirs) {
-    const r = row + dr
-    const c = col + dc
-    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && BUILD_GRID[r][c] === 0) return false
+function drawGrassDecor(ctx: CanvasRenderingContext2D): void {
+  for (const d of activeDecorations()) {
+    const sprite = getDebrisSprite(d.kind)
+    drawPixelSprite(ctx, sprite, d.x, d.y, d.scale)
   }
-  return true
 }
 
 function drawRangeOverlays(
