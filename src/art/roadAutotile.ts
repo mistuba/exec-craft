@@ -1,4 +1,4 @@
-import { BUILD_GRID, COLS, ROWS } from '../config/level1'
+import { BUILD_GRID, CELL, COLS, ROWS } from '../config/level1'
 import type { SpriteCanvas } from './pixelArt'
 
 const SIZE = 8
@@ -6,6 +6,14 @@ const SIZE = 8
 const DIRT = ['#a89470', '#9c8864', '#b0a074'] as const
 const EDGE = '#5a4830'
 const GRASS = ['#4a9848', '#449044', '#52a050'] as const
+
+/** 与土路格同一套：描边色、填充、线宽（1 源像素 × 放大） */
+export const ROAD_EDGE = EDGE
+export const ROAD_PX = CELL / SIZE
+
+export function roadFillAtWorld(wx: number, wy: number): string {
+  return dirtAtWorld(Math.floor(wx / ROAD_PX), Math.floor(wy / ROAD_PX))
+}
 
 const tileCache = new Map<number, SpriteCanvas>()
 

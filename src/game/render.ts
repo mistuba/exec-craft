@@ -7,12 +7,7 @@ import {
   getTowerScale,
   getTowerSprite,
 } from '../art/sprites'
-import {
-  getCampMarker,
-  getHoleMarker,
-  SCENE_MARKER_SCALE,
-} from '../art/sceneMarkers'
-import { campDrawCenter, campFireWorld, holeDrawCenter } from './sceneLayout'
+import { drawGoalFireFlash as flashGoalFire, drawRoadTerminals } from '../art/sceneMarkers'
 import { activeDecorations } from '../config/mapDecorations'
 import { drawPixelSprite } from '../art/pixelArt'
 import { ENEMY_DEFS } from '../config/enemies'
@@ -39,7 +34,7 @@ export function drawGame(
   drawSkyBackdrop(ctx)
   drawTileMap(ctx)
   drawGrassDecor(ctx)
-  drawSceneShells(ctx)
+  drawRoadTerminals(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
@@ -304,24 +299,8 @@ function drawFloats(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   }
 }
 
-function drawSceneShells(ctx: CanvasRenderingContext2D): void {
-  const hole = holeDrawCenter()
-  const camp = campDrawCenter()
-  const scale = SCENE_MARKER_SCALE
-  drawPixelSprite(ctx, getHoleMarker(), hole.x, hole.y, scale)
-  drawPixelSprite(ctx, getCampMarker(), camp.x, camp.y, scale)
-}
-
 function drawGoalFireFlash(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   if (snap.time >= snap.goalFlashUntil) return
-  const fire = campFireWorld()
   const t = 1 - (snap.goalFlashUntil - snap.time) / 0.55
-  ctx.globalAlpha = 0.55 + t * 0.45
-  ctx.fillStyle = '#ffb07a'
-  ctx.fillRect(Math.round(fire.x - 2), Math.round(fire.y - 3), 5, 4)
-  ctx.fillStyle = '#e87840'
-  ctx.fillRect(Math.round(fire.x - 1), Math.round(fire.y - 2), 3, 2)
-  ctx.fillStyle = '#fff0d0'
-  ctx.fillRect(Math.round(fire.x), Math.round(fire.y - 2), 1, 1)
-  ctx.globalAlpha = 1
+  flashGoalFire(ctx, t)
 }
