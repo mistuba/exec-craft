@@ -113,6 +113,12 @@ canvas {
 
 .wave-actions .primary {
   flex: 1;
+  width: 100%;
+}
+
+.wave-actions:has(.secondary:not(.hidden)) .primary {
+  flex: 1;
+  width: auto;
 }
 
 .wave-actions .secondary {
@@ -131,7 +137,27 @@ canvas {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+}
+
+.stat-wide {
+  grid-column: 1 / -1;
+}
+
+.wave-detail {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text);
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.actions.hidden,
+.wave-actions .secondary.hidden {
+  display: none;
 }
 
 .stat {

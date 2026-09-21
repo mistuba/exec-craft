@@ -224,34 +224,52 @@ const enemySprites: Record<EnemyKind, SpriteCanvas> = {
   ),
 }
 
-export const SIGN_SPAWN = buildSprite(
+/** 森林入口：石门 + 绿光 */
+export const SCENE_SPAWN = buildSprite(
   [
-    '..oooo..',
-    '.oGGGGo.',
-    '.oGgGGo.',
-    '.oGGGGo.',
-    '..o||o..',
-    '..o||o..',
-    '..oWWo..',
-    '.oWWWWo.',
+    '........oooooooo........',
+    '......ooGGGGGGGGoo......',
+    '.....oGGLLLLLLLLGGo.....',
+    '....oGLLFFFFFFLLGGo....',
+    '....oGLFFFFFFFFLGGo....',
+    '....oGLFFFFFFFFLGGo....',
+    '....oGLLFFFFFFLLGGo....',
+    '.....oGGLLLLLLGGGo.....',
+    '......ooWWWWWWoo......',
+    '.....oWWWWWWWWWWo.....',
+    '....oWWWWWWWWWWWWo....',
+    '....oWWo......oWWo....',
+    '....oWWo......oWWo....',
+    '....oWWWWWWWWWWWWo....',
+    '.....oooooooooooo.....',
+    '........................',
   ],
   P,
-  'sign-spawn',
+  'scene-spawn',
 )
 
-export const SIGN_END = buildSprite(
+/** 终点营地：帐篷 + 篝火 */
+export const SCENE_CAMP = buildSprite(
   [
-    '..oooo..',
-    '.oRRRRo.',
-    '.oRyyRo.',
-    '.oRRRRo.',
-    '..o||o..',
-    '..o||o..',
-    '..oWWo..',
-    '.oWWWWo.',
+    '........................',
+    '.........oooooo.........',
+    '........oYYYYYo........',
+    '.......oYyyyyYo.......',
+    '......oYyRRyyYo......',
+    '......oYyRRyyYo......',
+    '.......oyyyyyo.......',
+    '........ooooo........',
+    '......oooooooo......',
+    '.....oAAAAAAAAo.....',
+    '....oAAAAAAAAAAo....',
+    '...oAAAAo..oAAAAo...',
+    '...oAAAAo..oAAAAo...',
+    '....oAAAAAAAAo....',
+    '.....ooooooooo.....',
+    '........................',
   ],
   P,
-  'sign-end',
+  'scene-camp',
 )
 
 export function getTowerSprite(kind: TowerKind): SpriteCanvas {

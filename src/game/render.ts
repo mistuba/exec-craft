@@ -3,8 +3,8 @@ import {
   getEnemySprite,
   getTowerScale,
   getTowerSprite,
-  SIGN_END,
-  SIGN_SPAWN,
+  SCENE_CAMP,
+  SCENE_SPAWN,
   TILE_GRASS_A,
   TILE_GRASS_B,
   TILE_ROAD,
@@ -146,7 +146,7 @@ function drawRangeOverlays(
       const stats = def.levels[0]
       const cx = hover.col * CELL + CELL / 2
       const cy = hover.row * CELL + CELL / 2
-      drawRangeCircle(ctx, cx, cy, stats.range, 'rgba(88, 214, 141, 0.12)', 'rgba(88, 214, 141, 0.85)')
+      drawRangeCircle(ctx, cx, cy, stats.range, 'rgba(88, 166, 255, 0.14)', 'rgba(136, 196, 255, 0.95)')
     }
   }
 
@@ -185,17 +185,40 @@ function drawBuildHover(
   if (!hover || BUILD_GRID[hover.row]?.[hover.col] !== 0) return
   const x = hover.col * CELL
   const y = hover.row * CELL
+  const cx = x + CELL / 2
+  const cy = y + CELL / 2
   const occupied = snap.towers.some((t) => t.col === hover.col && t.row === hover.row)
   if (snap.buildKind && !occupied) {
-    ctx.fillStyle = 'rgba(88, 214, 141, 0.35)'
+    drawTowerFoundation(ctx, cx, cy, true)
+    ctx.fillStyle = 'rgba(136, 196, 255, 0.22)'
     ctx.fillRect(x, y, CELL, CELL)
-    ctx.strokeStyle = '#58d68d'
-    ctx.lineWidth = 2
-    ctx.strokeRect(x + 1, y + 1, CELL - 2, CELL - 2)
+    ctx.strokeStyle = '#e8f4ff'
+    ctx.lineWidth = 3
+    ctx.strokeRect(x + 1.5, y + 1.5, CELL - 3, CELL - 3)
+    ctx.strokeStyle = '#3d7ea6'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x + 4, y + 4, CELL - 8, CELL - 8)
+    const ghost = getTowerSprite(snap.buildKind)
+    drawPixelSprite(ctx, ghost, cx, cy - 2, getTowerScale(1), 0.72)
   } else if (occupied) {
     ctx.fillStyle = 'rgba(241, 196, 15, 0.28)'
     ctx.fillRect(x, y, CELL, CELL)
   }
+}
+
+function drawTowerFoundation(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  preview = false,
+): void {
+  ctx.fillStyle = preview ? '#6b6358' : '#5a5248'
+  ctx.fillRect(Math.round(x - 17), Math.round(y + 6), 34, 12)
+  ctx.fillStyle = preview ? '#8a8074' : '#7a7268'
+  ctx.fillRect(Math.round(x - 15), Math.round(y + 7), 30, 4)
+  ctx.strokeStyle = '#1a1423'
+  ctx.lineWidth = 2
+  ctx.strokeRect(Math.round(x - 17), Math.round(y + 6), 34, 12)
 }
 
 function drawTowers(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
@@ -203,9 +226,14 @@ function drawTowers(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
     const sprite = getTowerSprite(t.kind)
     const scale = getTowerScale(t.level)
     if (t.id === snap.selectedTowerId) {
-      ctx.fillStyle = 'rgba(241, 196, 15, 0.25)'
+      ctx.fillStyle = 'rgba(241, 196, 15, 0.22)'
       ctx.fillRect(t.col * CELL, t.row * CELL, CELL, CELL)
+      ctx.strokeStyle = '#f1c40f'
+      ctx.lineWidth = 2
+      ctx.strokeRect(t.col * CELL + 1, t.row * CELL + 1, CELL - 2, CELL - 2)
     }
+    drawTowerFoundation(ctx, t.x, t.y)
+    drawPixelSprite(ctx, sprite, t.x + 1, t.y - 1, scale, 0.35)
     drawPixelSprite(ctx, sprite, t.x, t.y - 2, scale)
     if (t.level === 2) {
       drawPixelStar(ctx, t.x + 10, t.y - 18)
@@ -318,11 +346,15 @@ function drawFloats(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
 function drawSpawnAndEnd(ctx: CanvasRenderingContext2D): void {
   const s = PATH_WAYPOINTS[0]
   const e = PATH_WAYPOINTS[PATH_WAYPOINTS.length - 1]
-  drawPixelSprite(ctx, SIGN_SPAWN, s.x, s.y - 22, 2.2)
-  drawPixelSprite(ctx, SIGN_END, e.x - 8, e.y - 8, 2.2)
-  ctx.font = 'bold 10px ui-monospace, "Courier New", monospace'
-  ctx.fillStyle = '#dff9ff'
-  ctx.fillText('入口', s.x, s.y - 38)
-  ctx.fillStyle = '#ffb3b3'
-  ctx.fillText('营地', e.x - 8, e.y - 26)
+  const pulse = 0.55 + Math.sin(performance.now() / 420) * 0.15
+  ctx.fillStyle = `rgba(111, 216, 106, ${0.12 * pulse})`
+  ctx.beginPath()
+  ctx.arc(s.x, s.y - 6, 28 + pulse * 6, 0, Math.PI * 2)
+  ctx.fill()
+  drawPixelSprite(ctx, SCENE_SPAWN, s.x, s.y - 10, 2.05)
+  ctx.fillStyle = 'rgba(255, 160, 80, 0.2)'
+  ctx.beginPath()
+  ctx.arc(e.x - 6, e.y - 14, 22, 0, Math.PI * 2)
+  ctx.fill()
+  drawPixelSprite(ctx, SCENE_CAMP, e.x - 10, e.y - 18, 2.05)
 }
