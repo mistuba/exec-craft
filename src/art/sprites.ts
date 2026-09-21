@@ -5,9 +5,9 @@ import { buildSprite, type SpriteCanvas } from './pixelArt'
 const P = {
   o: '#1a1423',
   O: '#2d2540',
-  G: '#52b84e',
-  g: '#2f6e32',
-  L: '#6fd86a',
+  G: '#4fa84c',
+  g: '#489848',
+  L: '#58b055',
   T: '#8b6914',
   t: '#c4a35a',
   s: '#6e5a3a',
@@ -37,32 +37,17 @@ const P = {
 
 export const TILE_GRASS_A = buildSprite(
   [
+    'GGGGGGGG',
     'GGgGGgGG',
-    'gLgGLgGg',
-    'GgGGgGLg',
-    'gGLgGgGg',
-    'GGgGGgGg',
-    'gGgGLgGG',
-    'GgGGgGgG',
-    'gGLgGgGg',
+    'GgGGGGgG',
+    'GGgGGgGG',
+    'GgGGGGgG',
+    'GGgGGgGG',
+    'GgGGGGgG',
+    'GGGGGGGG',
   ],
   P,
-  'grass-a-v2',
-)
-
-export const TILE_GRASS_B = buildSprite(
-  [
-    'gGGgGGgG',
-    'GLgGgGLg',
-    'GgGLgGgG',
-    'gGgGGgGL',
-    'GGgGLgGg',
-    'gGLgGgGG',
-    'GgGGgGLg',
-    'gGgGgGGg',
-  ],
-  P,
-  'grass-b-v2',
+  'grass-soft-v3',
 )
 
 export const TILE_ROAD = buildSprite(

@@ -6,7 +6,6 @@ import {
   SCENE_CAMP,
   SCENE_SPAWN,
   TILE_GRASS_A,
-  TILE_GRASS_B,
   TILE_ROAD,
   TILE_ROAD_EDGE,
 } from '../art/sprites'
@@ -35,7 +34,6 @@ export function drawGame(
 
   drawSkyBackdrop(ctx)
   drawTileMap(ctx)
-  drawCellGrid(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
@@ -81,40 +79,8 @@ function drawTileMap(ctx: CanvasRenderingContext2D): void {
         ? hasRoadNeighbor(row, col)
           ? TILE_ROAD
           : TILE_ROAD_EDGE
-        : (row + col) % 2 === 0
-          ? TILE_GRASS_A
-          : TILE_GRASS_B
+        : TILE_GRASS_A
       ctx.drawImage(sprite, x, y, CELL, CELL)
-    }
-  }
-}
-
-/** 建造格网线，方便辨认可放塔格子 */
-function drawCellGrid(ctx: CanvasRenderingContext2D): void {
-  ctx.strokeStyle = 'rgba(15, 22, 18, 0.55)'
-  ctx.lineWidth = 1
-  for (let col = 0; col <= COLS; col++) {
-    const x = col * CELL + 0.5
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, MAP_H)
-    ctx.stroke()
-  }
-  for (let row = 0; row <= ROWS; row++) {
-    const y = row * CELL + 0.5
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(MAP_W, y)
-    ctx.stroke()
-  }
-
-  for (let row = 0; row < ROWS; row++) {
-    for (let col = 0; col < COLS; col++) {
-      if (BUILD_GRID[row][col] !== 0) continue
-      const x = col * CELL
-      const y = row * CELL
-      ctx.fillStyle = (row + col) % 2 === 0 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)'
-      ctx.fillRect(x + 1, y + 1, CELL - 2, CELL - 2)
     }
   }
 }
