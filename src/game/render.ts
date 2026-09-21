@@ -7,7 +7,12 @@ import {
   getTowerScale,
   getTowerSprite,
 } from '../art/sprites'
-import { getCampMarker, getHoleMarker } from '../art/sceneMarkers'
+import {
+  getCampMarker,
+  getHoleMarker,
+  SCENE_MARKER_SCALE,
+} from '../art/sceneMarkers'
+import { campDrawCenter, campFireWorld, holeDrawCenter } from './sceneLayout'
 import { activeDecorations } from '../config/mapDecorations'
 import { drawPixelSprite } from '../art/pixelArt'
 import { ENEMY_DEFS } from '../config/enemies'
@@ -19,12 +24,6 @@ import {
   MAP_W,
   ROWS,
 } from '../config/level1'
-import {
-  goalAnchor,
-  PATH_WAYPOINTS,
-  pathTangentAtEnd,
-  pathTangentAtStart,
-} from './path'
 import { TOWER_DEFS } from '../config/towers'
 import type { GameSnapshot } from './engine'
 
@@ -40,6 +39,7 @@ export function drawGame(
   drawSkyBackdrop(ctx)
   drawTileMap(ctx)
   drawGrassDecor(ctx)
+  drawSceneShells(ctx)
   drawRangeOverlays(ctx, snap, hoverCell)
   drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
@@ -48,7 +48,7 @@ export function drawGame(
   drawProjectiles(ctx, snap)
   drawHitEffects(ctx, snap)
   drawFloats(ctx, snap)
-  drawSpawnAndEnd(ctx, snap)
+  drawGoalFireFlash(ctx, snap)
   if (snap.paused) drawPausedBanner(ctx)
 
   ctx.restore()
@@ -304,37 +304,24 @@ function drawFloats(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   }
 }
 
-function drawSpawnAndEnd(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
-  const start = PATH_WAYPOINTS[0]
-  const tanIn = pathTangentAtStart()
-  const hx = start.x - tanIn.dx * 20
-  const hy = start.y - tanIn.dy * 20 - 4
+function drawSceneShells(ctx: CanvasRenderingContext2D): void {
+  const hole = holeDrawCenter()
+  const camp = campDrawCenter()
+  const scale = SCENE_MARKER_SCALE
+  drawPixelSprite(ctx, getHoleMarker(), hole.x, hole.y, scale)
+  drawPixelSprite(ctx, getCampMarker(), camp.x, camp.y, scale)
+}
 
-  ctx.fillStyle = 'rgba(8, 6, 4, 0.35)'
-  ctx.beginPath()
-  ctx.ellipse(hx, hy + 6, 22, 16, 0, 0, Math.PI * 2)
-  ctx.fill()
-  drawPixelSprite(ctx, getHoleMarker(), hx, hy, 2.2)
-
-  const tanEnd = pathTangentAtEnd()
-  const goal = goalAnchor()
-  const cx = goal.x + tanEnd.dx * 10
-  const cy = goal.y + tanEnd.dy * 10 - 10
-  const flash = snap.time < snap.goalFlashUntil
-
-  ctx.fillStyle = 'rgba(200, 90, 40, 0.14)'
-  ctx.beginPath()
-  ctx.arc(cx, cy + 8, 28, 0, Math.PI * 2)
-  ctx.fill()
-
-  drawPixelSprite(ctx, getCampMarker(), cx, cy, 2.25)
-
-  if (flash) {
-    ctx.fillStyle = 'rgba(255, 150, 70, 0.45)'
-    ctx.beginPath()
-    ctx.arc(cx, cy + 6, 24, 0, Math.PI * 2)
-    ctx.fill()
-    ctx.fillStyle = '#ffb07a'
-    ctx.fillRect(Math.round(cx - 3), Math.round(cy + 4), 6, 6)
-  }
+function drawGoalFireFlash(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
+  if (snap.time >= snap.goalFlashUntil) return
+  const fire = campFireWorld()
+  const t = 1 - (snap.goalFlashUntil - snap.time) / 0.55
+  ctx.globalAlpha = 0.55 + t * 0.45
+  ctx.fillStyle = '#ffb07a'
+  ctx.fillRect(Math.round(fire.x - 2), Math.round(fire.y - 3), 5, 4)
+  ctx.fillStyle = '#e87840'
+  ctx.fillRect(Math.round(fire.x - 1), Math.round(fire.y - 2), 3, 2)
+  ctx.fillStyle = '#fff0d0'
+  ctx.fillRect(Math.round(fire.x), Math.round(fire.y - 2), 1, 1)
+  ctx.globalAlpha = 1
 }
