@@ -2,8 +2,8 @@ import { buildRoadWaypoints } from './roadPath'
 
 export const PATH_WAYPOINTS = buildRoadWaypoints()
 
-/** 怪从洞口内侧走出，不落在首格路心 */
-export const SPAWN_BACK = 36
+/** 怪从洞腔内侧走出（画布内的黑洞里，不从左缘外冒出来） */
+export const SPAWN_BACK = 6
 
 export function pathLength(): number {
   let len = 0
