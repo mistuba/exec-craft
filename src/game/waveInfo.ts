@@ -17,12 +17,10 @@ export function displayWaveIndex(waveIndex: number, phase: string): number {
   return waveIndex
 }
 
-export function waveStatusLabel(waveIndex: number, phase: string): string {
+/** 侧栏波次数字，仅 N/总数 */
+export function waveFraction(waveIndex: number, phase: string): string {
   const total = LEVEL_WAVES.length
-  if (waveIndex < 0) return `准备 · 0/${total}`
-  if (phase === 'wave') {
-    return `${LEVEL_WAVES[waveIndex].label} · ${waveIndex + 1}/${total}`
-  }
-  if (waveIndex >= total - 1) return `已通过 · ${total}/${total}`
-  return `波次间隙 · ${waveIndex + 1}/${total}`
+  if (waveIndex < 0) return `0/${total}`
+  if (phase === 'wave') return `${waveIndex + 1}/${total}`
+  return `${waveIndex + 1}/${total}`
 }

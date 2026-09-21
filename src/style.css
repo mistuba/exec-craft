@@ -140,10 +140,6 @@ canvas {
   margin-bottom: 8px;
 }
 
-.stat-wide {
-  grid-column: 1 / -1;
-}
-
 .wave-detail {
   margin: 0 0 10px;
   padding: 8px 10px;
@@ -156,7 +152,7 @@ canvas {
 }
 
 .actions.hidden,
-.wave-actions .secondary.hidden {
+.wave-actions .hidden {
   display: none;
 }
 
@@ -187,15 +183,6 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.cancel-build {
-  width: 100%;
-  margin-top: 8px;
-}
-
-.cancel-build.hidden {
-  display: none;
 }
 
 .tower-btn {
