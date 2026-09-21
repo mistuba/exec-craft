@@ -41,6 +41,27 @@ export interface Projectile {
   slowFactor?: number
   slowDuration?: number
   targetId: number
+  /** 追踪目标位置（每帧更新 toX/toY） */
+  homing: boolean
+}
+
+export interface Corpse {
+  id: number
+  kind: EnemyKind
+  x: number
+  y: number
+  life: number
+  maxLife: number
+}
+
+export interface HitEffect {
+  id: number
+  x: number
+  y: number
+  life: number
+  maxLife: number
+  towerKind: TowerKind
+  radius: number
 }
 
 export interface FloatingText {

@@ -20,11 +20,15 @@ export function drawGame(
   ctx.clearRect(0, 0, MAP_W, MAP_H)
 
   drawBackground(ctx)
-  drawGrid(ctx, snap, hoverCell)
+  drawRoadCells(ctx)
   drawPath(ctx)
+  drawRangeOverlays(ctx, snap, hoverCell)
+  drawBuildHover(ctx, snap, hoverCell)
   drawTowers(ctx, snap)
+  drawCorpses(ctx, snap)
   drawEnemies(ctx, snap)
   drawProjectiles(ctx, snap)
+  drawHitEffects(ctx, snap)
   drawFloats(ctx, snap)
   drawSpawnAndEnd(ctx)
 
@@ -50,11 +54,7 @@ function drawBackground(ctx: CanvasRenderingContext2D): void {
   }
 }
 
-function drawGrid(
-  ctx: CanvasRenderingContext2D,
-  snap: GameSnapshot,
-  hover: { col: number; row: number } | null,
-): void {
+function drawRoadCells(ctx: CanvasRenderingContext2D): void {
   for (let row = 0; row < ROWS; row++) {
     for (let col = 0; col < COLS; col++) {
       if (BUILD_GRID[row][col] === 1) {
@@ -67,25 +67,21 @@ function drawGrid(
       }
     }
   }
+}
 
-  if (hover && BUILD_GRID[hover.row]?.[hover.col] === 0) {
-    const x = hover.col * CELL
-    const y = hover.row * CELL
+function drawRangeOverlays(
+  ctx: CanvasRenderingContext2D,
+  snap: GameSnapshot,
+  hover: { col: number; row: number } | null,
+): void {
+  if (hover && snap.buildKind && BUILD_GRID[hover.row]?.[hover.col] === 0) {
     const occupied = snap.towers.some((t) => t.col === hover.col && t.row === hover.row)
-    if (snap.buildKind && !occupied) {
+    if (!occupied) {
       const def = TOWER_DEFS[snap.buildKind]
       const stats = def.levels[0]
-      ctx.fillStyle = 'rgba(46, 204, 113, 0.25)'
-      ctx.fillRect(x, y, CELL, CELL)
-      ctx.strokeStyle = 'rgba(46, 204, 113, 0.8)'
-      ctx.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4)
-      ctx.beginPath()
-      ctx.arc(x + CELL / 2, y + CELL / 2, stats.range, 0, Math.PI * 2)
-      ctx.strokeStyle = 'rgba(46, 204, 113, 0.35)'
-      ctx.stroke()
-    } else if (occupied) {
-      ctx.fillStyle = 'rgba(241, 196, 15, 0.2)'
-      ctx.fillRect(x, y, CELL, CELL)
+      const cx = hover.col * CELL + CELL / 2
+      const cy = hover.row * CELL + CELL / 2
+      drawRangeCircle(ctx, cx, cy, stats.range, 'rgba(46, 204, 113, 0.1)', 'rgba(46, 204, 113, 0.65)')
     }
   }
 
@@ -93,12 +89,47 @@ function drawGrid(
   if (sel) {
     const def = TOWER_DEFS[sel.kind]
     const stats = def.levels[sel.level - 1]
-    ctx.beginPath()
-    ctx.arc(sel.x, sel.y, stats.range, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(241, 196, 15, 0.08)'
-    ctx.fill()
-    ctx.strokeStyle = 'rgba(241, 196, 15, 0.45)'
-    ctx.stroke()
+    drawRangeCircle(ctx, sel.x, sel.y, stats.range, 'rgba(241, 196, 15, 0.12)', 'rgba(241, 196, 15, 0.75)')
+  }
+}
+
+function drawRangeCircle(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  r: number,
+  fill: string,
+  stroke: string,
+): void {
+  ctx.beginPath()
+  ctx.arc(x, y, r, 0, Math.PI * 2)
+  ctx.fillStyle = fill
+  ctx.fill()
+  ctx.strokeStyle = stroke
+  ctx.lineWidth = 2
+  ctx.setLineDash([6, 5])
+  ctx.stroke()
+  ctx.setLineDash([])
+}
+
+function drawBuildHover(
+  ctx: CanvasRenderingContext2D,
+  snap: GameSnapshot,
+  hover: { col: number; row: number } | null,
+): void {
+  if (!hover || BUILD_GRID[hover.row]?.[hover.col] !== 0) return
+  const x = hover.col * CELL
+  const y = hover.row * CELL
+  const occupied = snap.towers.some((t) => t.col === hover.col && t.row === hover.row)
+  if (snap.buildKind && !occupied) {
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.28)'
+    ctx.fillRect(x, y, CELL, CELL)
+    ctx.strokeStyle = 'rgba(46, 204, 113, 0.9)'
+    ctx.lineWidth = 2
+    ctx.strokeRect(x + 2, y + 2, CELL - 4, CELL - 4)
+  } else if (occupied) {
+    ctx.fillStyle = 'rgba(241, 196, 15, 0.22)'
+    ctx.fillRect(x, y, CELL, CELL)
   }
 }
 
@@ -171,6 +202,20 @@ function drawTowers(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   }
 }
 
+function drawCorpses(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
+  for (const c of snap.corpses) {
+    const def = ENEMY_DEFS[c.kind]
+    const alpha = Math.max(0, c.life / c.maxLife)
+    const scale = 0.55 + 0.45 * alpha
+    ctx.globalAlpha = alpha * 0.85
+    ctx.fillStyle = '#2c2c2c'
+    ctx.beginPath()
+    ctx.ellipse(c.x, c.y + 4, def.radius * scale, def.radius * 0.45 * scale, 0, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.globalAlpha = 1
+  }
+}
+
 function drawEnemies(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
   for (const e of snap.enemies) {
     const def = ENEMY_DEFS[e.kind]
@@ -197,10 +242,58 @@ function drawProjectiles(ctx: CanvasRenderingContext2D, snap: GameSnapshot): voi
     const x = p.fromX + (p.toX - p.fromX) * p.progress
     const y = p.fromY + (p.toY - p.fromY) * p.progress
     const def = TOWER_DEFS[p.towerKind]
-    ctx.fillStyle = def.color
+    const tail = Math.min(0.35, p.progress)
+    const tx = p.fromX + (p.toX - p.fromX) * Math.max(0, p.progress - tail)
+    const ty = p.fromY + (p.toY - p.fromY) * Math.max(0, p.progress - tail)
+
+    ctx.strokeStyle = def.color
+    ctx.lineWidth = p.towerKind === 'bolt' ? 3 : p.towerKind === 'frost' ? 4 : 5
+    ctx.globalAlpha = 0.85
     ctx.beginPath()
-    ctx.arc(x, y, 4, 0, Math.PI * 2)
-    ctx.fill()
+    ctx.moveTo(tx, ty)
+    ctx.lineTo(x, y)
+    ctx.stroke()
+    ctx.globalAlpha = 1
+
+    ctx.shadowColor = def.color
+    ctx.shadowBlur = p.towerKind === 'ember' ? 14 : 8
+    ctx.fillStyle = def.color
+    if (p.towerKind === 'bolt') {
+      ctx.beginPath()
+      ctx.moveTo(x + 6, y)
+      ctx.lineTo(x - 4, y - 4)
+      ctx.lineTo(x - 2, y)
+      ctx.lineTo(x - 4, y + 4)
+      ctx.closePath()
+      ctx.fill()
+    } else if (p.towerKind === 'frost') {
+      ctx.beginPath()
+      ctx.arc(x, y, 5, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = '#dff9ff'
+      ctx.lineWidth = 1.5
+      ctx.stroke()
+    } else {
+      ctx.beginPath()
+      ctx.arc(x, y, 6, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.shadowBlur = 0
+  }
+}
+
+function drawHitEffects(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void {
+  for (const h of snap.hitEffects) {
+    const def = TOWER_DEFS[h.towerKind]
+    const t = 1 - h.life / h.maxLife
+    const r = h.radius * (0.4 + t * 0.9)
+    ctx.globalAlpha = 1 - t
+    ctx.strokeStyle = def.color
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.arc(h.x, h.y, r, 0, Math.PI * 2)
+    ctx.stroke()
+    ctx.globalAlpha = 1
   }
 }
 

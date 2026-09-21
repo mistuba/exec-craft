@@ -11,12 +11,16 @@ import * as audio from './audio'
 import { distanceAlongPath, pathLength, positionAtDistance } from './path'
 import { markLevelProgress } from './save'
 import type {
+  Corpse,
   Enemy,
   FloatingText,
   GamePhase,
+  HitEffect,
   Projectile,
   Tower,
 } from './types'
+
+const CORPSE_LINGER = 2
 
 let nextId = 1
 
@@ -29,6 +33,8 @@ export interface GameSnapshot {
   enemies: Enemy[]
   projectiles: Projectile[]
   floats: FloatingText[]
+  corpses: Corpse[]
+  hitEffects: HitEffect[]
   waveLabel: string
   enemiesRemaining: number
   selectedTowerId: number | null
@@ -47,6 +53,8 @@ export class GameEngine {
   enemies: Enemy[] = []
   projectiles: Projectile[] = []
   floats: FloatingText[] = []
+  corpses: Corpse[] = []
+  hitEffects: HitEffect[] = []
   selectedTowerId: number | null = null
   buildKind: TowerKind | null = null
   time = 0
@@ -80,6 +88,8 @@ export class GameEngine {
       enemies: this.enemies,
       projectiles: this.projectiles,
       floats: this.floats,
+      corpses: this.corpses,
+      hitEffects: this.hitEffects,
       waveLabel:
         this.waveIndex >= 0 ? LEVEL_WAVES[this.waveIndex]?.label ?? '' : '准备阶段',
       enemiesRemaining: this.spawnQueue.length + this.enemies.length,
@@ -131,6 +141,7 @@ export class GameEngine {
     }
     this.towers.push(tower)
     this.selectedTowerId = tower.id
+    this.buildKind = null
     audio.playBuild()
     this.addFloat(tower.x, tower.y, `-${def.cost}`, '#f1c40f')
     this.emit()
@@ -225,6 +236,15 @@ export class GameEngine {
           const def = ENEMY_DEFS[e.kind]
           this.gold += def.reward
           audio.playGold()
+          this.addFloat(e.x, e.y, `+${def.reward}`, '#f1c40f')
+          this.corpses.push({
+            id: nextId++,
+            kind: e.kind,
+            x: e.x,
+            y: e.y,
+            life: CORPSE_LINGER,
+            maxLife: CORPSE_LINGER,
+          })
         }
         return false
       }
@@ -238,6 +258,8 @@ export class GameEngine {
       const target = this.findTarget(t, stats.range)
       if (!target) continue
       t.cooldown = stats.fireInterval
+      const boltSpeed =
+        t.kind === 'bolt' ? 560 : t.kind === 'frost' ? 380 : 320
       this.projectiles.push({
         id: nextId++,
         fromX: t.x,
@@ -245,18 +267,26 @@ export class GameEngine {
         toX: target.x,
         toY: target.y,
         progress: 0,
-        speed: 420,
+        speed: boltSpeed,
         damage: stats.damage,
         towerKind: t.kind,
         splashRadius: stats.splashRadius,
         slowFactor: stats.slowFactor,
         slowDuration: stats.slowDuration,
         targetId: target.id,
+        homing: true,
       })
       audio.playShoot(t.kind)
     }
 
     for (const p of this.projectiles) {
+      if (p.homing) {
+        const target = this.enemies.find((e) => e.id === p.targetId)
+        if (target) {
+          p.toX = target.x
+          p.toY = target.y
+        }
+      }
       const dist = Math.hypot(p.toX - p.fromX, p.toY - p.fromY)
       p.progress += (p.speed * scaled) / Math.max(dist, 1)
       if (p.progress >= 1) {
@@ -268,6 +298,12 @@ export class GameEngine {
 
     for (const f of this.floats) f.life -= scaled
     this.floats = this.floats.filter((f) => f.life > 0)
+
+    for (const c of this.corpses) c.life -= scaled
+    this.corpses = this.corpses.filter((c) => c.life > 0)
+
+    for (const h of this.hitEffects) h.life -= scaled
+    this.hitEffects = this.hitEffects.filter((h) => h.life > 0)
 
     if (
       this.phase === 'wave' &&
@@ -341,6 +377,16 @@ export class GameEngine {
       applyHit(primary, p.damage)
     }
     audio.playHit()
+    const splash = p.splashRadius ?? 18
+    this.hitEffects.push({
+      id: nextId++,
+      x: hitX,
+      y: hitY,
+      life: 0.35,
+      maxLife: 0.35,
+      towerKind: p.towerKind,
+      radius: p.splashRadius ? splash : 14,
+    })
   }
 
   private addFloat(x: number, y: number, text: string, color: string): void {

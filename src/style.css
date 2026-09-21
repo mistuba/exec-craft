@@ -127,6 +127,15 @@ canvas {
   gap: 8px;
 }
 
+.cancel-build {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.cancel-build.hidden {
+  display: none;
+}
+
 .tower-btn {
   display: flex;
   align-items: flex-start;

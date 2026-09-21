@@ -17,7 +17,7 @@ engine.speed = save.settings.speed
 app.innerHTML = `
   <header>
     <h1>奇幻塔防 · ${LEVEL_NAME}</h1>
-    <p>固定路线、草地放塔。漏怪 ${10} 个失败。进度与设置保存在本机浏览器。</p>
+    <p>固定路线、草地放塔。漏怪 ${10} 个失败。放塔后自动退出建造模式；按住 Shift 可连续放置。</p>
   </header>
   <div class="layout">
     <div class="canvas-wrap" id="canvas-wrap">
@@ -39,11 +39,12 @@ app.innerHTML = `
           <div class="stat"><span>场上敌人</span><strong id="enemy-count">0</strong></div>
         </div>
         <button type="button" class="primary" id="start-wave">开始下一波</button>
-        <p class="hint" id="wave-hint">先选塔型，点击草地建造。点击已有塔可升级或出售。</p>
+        <p class="hint" id="wave-hint">选塔后点草地建造；右键或 Esc 取消建造。点击已有塔可升级或出售。</p>
       </div>
       <div class="panel toolbar">
         <h2>建造</h2>
         <div class="tower-btns" id="tower-btns"></div>
+        <button type="button" class="secondary cancel-build hidden" id="cancel-build">取消建造（Esc）</button>
         <div class="selection-info" id="selection-info">未选中塔</div>
         <div class="actions">
           <button type="button" class="secondary" id="upgrade" disabled>升级（2 级）</button>
@@ -82,9 +83,12 @@ for (const kind of kinds) {
   `
   btn.addEventListener('click', () => {
     audio.unlockAudio()
-    engine.setBuildKind(kind)
-    document.querySelectorAll('.tower-btn').forEach((el) => el.classList.remove('active'))
-    btn.classList.add('active')
+    const cur = engine.snapshot().buildKind
+    if (cur === kind) {
+      engine.setBuildKind(null)
+    } else {
+      engine.setBuildKind(kind)
+    }
   })
   towerBtns.appendChild(btn)
 }
@@ -102,6 +106,7 @@ const overlay = document.querySelector<HTMLDivElement>('#overlay')!
 const overlayTitle = document.querySelector<HTMLHeadingElement>('#overlay-title')!
 const overlayMsg = document.querySelector<HTMLParagraphElement>('#overlay-msg')!
 const overlayBtn = document.querySelector<HTMLButtonElement>('#overlay-btn')!
+const cancelBuildBtn = document.querySelector<HTMLButtonElement>('#cancel-build')!
 
 let hoverCell: { col: number; row: number } | null = null
 let lastSnap = engine.snapshot()
@@ -151,9 +156,13 @@ function refreshUI(snap = lastSnap): void {
     sellBtn.disabled = false
     sellBtn.textContent = `出售（约 ${Math.floor(sel.invested * def.sellRatio)} 金）`
   } else {
-    selectionInfo.textContent = snap.buildKind
-      ? `建造模式：${TOWER_DEFS[snap.buildKind].name}，点击草地放置`
-      : '未选中塔'
+    if (snap.buildKind) {
+      selectionInfo.innerHTML = `建造：<strong>${TOWER_DEFS[snap.buildKind].name}</strong><br>点草地放置；放一次后自动退出（Shift 连续放）`
+      cancelBuildBtn.classList.remove('hidden')
+    } else {
+      selectionInfo.textContent = '未选中塔（点空地可取消选中）'
+      cancelBuildBtn.classList.add('hidden')
+    }
     upgradeBtn.disabled = true
     upgradeBtn.textContent = '升级（2 级）'
     sellBtn.disabled = true
@@ -182,13 +191,13 @@ function refreshUI(snap = lastSnap): void {
   waveHint.textContent =
     snap.phase === 'prep' && snap.waveIndex >= 0
       ? '波次间隙可调整防线。准备好后点击「开始下一波」。'
-      : '先选塔型，点击草地建造。点击已有塔可升级或出售。'
+      : '选塔后点草地建造；右键或 Esc 取消建造。点击已有塔可升级或出售。'
 }
 
-engine.subscribe((snap) => {
-  lastSnap = snap
-  refreshUI(snap)
-})
+function syncFromEngine(): void {
+  lastSnap = engine.snapshot()
+  refreshUI(lastSnap)
+}
 
 canvas.addEventListener('pointermove', (e) => {
   hoverCell = cellFromEvent(e.clientX, e.clientY)
@@ -198,17 +207,41 @@ canvas.addEventListener('pointerleave', () => {
   hoverCell = null
 })
 
+canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+
 canvas.addEventListener('pointerdown', (e) => {
   audio.unlockAudio()
+  if (e.button === 2) {
+    engine.setBuildKind(null)
+    return
+  }
   const cell = cellFromEvent(e.clientX, e.clientY)
   if (!cell) return
   const occupied = lastSnap.towers.some((t) => t.col === cell.col && t.row === cell.row)
   if (occupied) {
     engine.selectTowerAt(cell.col, cell.row)
+    syncFromEngine()
   } else if (lastSnap.buildKind) {
+    const kind = lastSnap.buildKind
+    const shift = e.shiftKey
     engine.tryBuild(cell.col, cell.row)
+    if (shift) engine.setBuildKind(kind)
+    syncFromEngine()
   } else {
     engine.clearSelection()
+    syncFromEngine()
+  }
+})
+
+cancelBuildBtn.addEventListener('click', () => {
+  engine.setBuildKind(null)
+  syncFromEngine()
+})
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    engine.setBuildKind(null)
+    syncFromEngine()
   }
 })
 
@@ -244,7 +277,10 @@ function frame(now: number): void {
   const dt = Math.min(0.05, (now - prev) / 1000)
   prev = now
   engine.update(dt)
+  lastSnap = engine.snapshot()
+  refreshUI(lastSnap)
   drawGame(ctx, lastSnap, hoverCell)
   requestAnimationFrame(frame)
 }
+syncFromEngine()
 requestAnimationFrame(frame)
