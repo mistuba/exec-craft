@@ -111,18 +111,16 @@ canvas {
   gap: 8px;
 }
 
-.wave-actions .primary {
+.wave-actions #start-wave {
   flex: 1;
   width: 100%;
 }
 
-.wave-actions:has(.secondary:not(.hidden)) .primary {
+.wave-actions #wave-speed,
+.wave-actions #pause-game {
   flex: 1;
-  width: auto;
-}
-
-.wave-actions .secondary {
-  min-width: 72px;
+  flex-basis: 0;
+  min-width: 0;
   padding: 10px 12px;
 }
 

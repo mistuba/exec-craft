@@ -188,6 +188,8 @@ export class GameEngine {
     if (next >= LEVEL_WAVES.length) return
     if (this.phase === 'wave' && this.enemies.length + this.spawnQueue.length > 0) return
 
+    this.selectedTowerId = null
+    this.buildKind = null
     this.waveIndex = next
     this.phase = 'wave'
     const wave = LEVEL_WAVES[next]
