@@ -397,12 +397,13 @@ export class GameEngine {
     }
     audio.playHit()
     const splash = p.splashRadius ?? 18
+    const life = p.splashRadius ? 0.55 : 0.35
     this.hitEffects.push({
       id: nextId++,
       x: hitX,
       y: hitY,
-      life: 0.35,
-      maxLife: 0.35,
+      life,
+      maxLife: life,
       towerKind: p.towerKind,
       radius: p.splashRadius ? splash : 14,
     })

@@ -18,8 +18,23 @@ engine.speed = save.settings.speed
 
 app.innerHTML = `
   <header>
-    <h1>奇幻塔防 · ${LEVEL_NAME}</h1>
-    <p>简易像素奇幻风 · 固定路线放塔。漏怪 ${10} 个失败。放塔后自动退出建造；Shift 连续放置。</p>
+    <div class="title-row">
+      <div>
+        <h1>奇幻塔防 · ${LEVEL_NAME}</h1>
+        <p>简易像素奇幻风 · 固定路线放塔。漏怪 ${10} 个失败。放塔后自动退出建造；Shift 连续放置。</p>
+      </div>
+      <button type="button" class="icon-btn${save.settings.muted ? ' is-muted' : ''}" id="mute" aria-pressed="${save.settings.muted}" aria-label="${save.settings.muted ? '打开音效' : '关闭音效'}" title="音效">
+        <svg class="icon-on" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/>
+          <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M16.5 9.2a3.2 3.2 0 0 1 0 5.6"/>
+          <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M18.8 7a6 6 0 0 1 0 10"/>
+        </svg>
+        <svg class="icon-off" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4z"/>
+          <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M16 10l4 4M20 10l-4 4"/>
+        </svg>
+      </button>
+    </div>
   </header>
   <div class="layout">
     <div class="map-column">
@@ -50,14 +65,12 @@ app.innerHTML = `
         </div>
         <p class="hint" id="wave-hint">选塔后点草地建造；右键或 Esc 取消建造。点击已有塔可升级或出售。</p>
         <div class="selection-block">
-          <div class="selection-info" id="selection-info">未选中塔</div>
-          <div class="actions hidden" id="tower-actions">
-            <button type="button" class="secondary" id="upgrade" disabled>升级（2 级）</button>
-            <button type="button" class="danger" id="sell" disabled>出售</button>
-          </div>
-          <div class="settings">
-            <button type="button" class="secondary" id="mute">${save.settings.muted ? '音效：关' : '音效：开'}</button>
-            <button type="button" class="secondary" id="speed">${save.settings.speed === 2 ? '倍速：2×' : '倍速：1×'}</button>
+          <div class="inspector">
+            <div class="selection-info" id="selection-info">未选中塔</div>
+            <div class="actions hidden" id="tower-actions">
+              <button type="button" class="secondary" id="upgrade" disabled>升级（2 级）</button>
+              <button type="button" class="danger" id="sell" disabled>出售</button>
+            </div>
           </div>
         </div>
       </div>
@@ -170,9 +183,7 @@ function refreshUI(snap = lastSnap): void {
   pauseBtn.disabled = ended
   pauseBtn.textContent = snap.paused ? '继续' : '暂停'
 
-  const speedLabel = loadSave().settings.speed === 2 ? '倍速：2×' : '倍速：1×'
-  waveSpeedBtn.textContent = speedLabel
-  speedBtn.textContent = speedLabel
+  waveSpeedBtn.textContent = loadSave().settings.speed === 2 ? '倍速：2×' : '倍速：1×'
 
   if (snap.phase === 'won') {
     startWaveBtn.classList.remove('hidden')
@@ -191,7 +202,8 @@ function refreshUI(snap = lastSnap): void {
   if (sel) {
     const def = TOWER_DEFS[sel.kind]
     const stats = def.levels[sel.level - 1]
-    selectionInfo.innerHTML = `已选 <strong>${def.name}</strong>（${sel.level} 级）<br>伤害 ${stats.damage} · 射程 ${stats.range}`
+    const splash = stats.splashRadius ? ` · 灼烧半径 ${stats.splashRadius}` : ''
+    selectionInfo.innerHTML = `已选 <strong>${def.name}</strong>（${sel.level} 级）<br>伤害 ${stats.damage} · 射程 ${stats.range}${splash}`
     upgradeBtn.disabled = sel.level >= 2 || snap.gold < def.upgradeCost
     upgradeBtn.textContent =
       sel.level >= 2 ? '已满级' : `升级（${def.upgradeCost} 金）`
@@ -293,22 +305,19 @@ muteBtn.addEventListener('click', () => {
   const next = !loadSave().settings.muted
   updateSettings({ muted: next })
   audio.setMuted(next)
-  muteBtn.textContent = next ? '音效：关' : '音效：开'
+  muteBtn.classList.toggle('is-muted', next)
+  muteBtn.setAttribute('aria-pressed', String(next))
+  muteBtn.setAttribute('aria-label', next ? '打开音效' : '关闭音效')
 })
-
-const speedBtn = document.querySelector<HTMLButtonElement>('#speed')!
 
 function toggleGameSpeed(): void {
   const cur = loadSave().settings
   const next = cur.speed === 2 ? 1 : 2
   updateSettings({ speed: next })
   engine.speed = next
-  const label = next === 2 ? '倍速：2×' : '倍速：1×'
-  speedBtn.textContent = label
-  waveSpeedBtn.textContent = label
+  waveSpeedBtn.textContent = next === 2 ? '倍速：2×' : '倍速：1×'
 }
 
-speedBtn.addEventListener('click', toggleGameSpeed)
 waveSpeedBtn.addEventListener('click', toggleGameSpeed)
 
 overlayBtn.addEventListener('click', () => overlay.classList.add('hidden'))

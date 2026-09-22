@@ -68,7 +68,7 @@ export const TOWER_DEFS: Record<TowerKind, TowerDef> = {
   ember: {
     id: 'ember',
     name: '奥术余烬',
-    description: '范围灼烧，单体伤害低于强弩。',
+    description: '命中后灼烧周围敌人，单体伤害低于强弩。',
     cost: 150,
     upgradeCost: 110,
     sellRatio: 0.7,
