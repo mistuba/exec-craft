@@ -63,17 +63,28 @@ header p {
 
 @media (min-width: 800px) {
   .layout {
-    flex-direction: row;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-areas:
+      'map side'
+      'dock dock';
+    align-items: stretch;
     gap: 16px;
   }
-  .side {
-    width: 280px;
-    flex-shrink: 0;
-  }
   .map-column {
-    flex: 1;
+    grid-area: map;
     min-width: 0;
+  }
+  .side {
+    grid-area: side;
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .dock {
+    grid-area: dock;
   }
 }
 
@@ -178,9 +189,46 @@ canvas {
 }
 
 .tower-btns {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+@media (min-width: 800px) {
+  .dock .tower-btns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.hud {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+
+.selection-block {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.selection-block .actions {
+  margin-top: 8px;
+}
+
+.selection-block .actions button {
+  flex: 1;
+}
+
+@media (min-width: 800px) {
+  .side {
+    display: flex;
+    flex-direction: column;
+  }
+  .hud {
+    justify-content: space-between;
+    gap: 10px;
+  }
 }
 
 .tower-btn {
