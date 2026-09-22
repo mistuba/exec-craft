@@ -35,7 +35,7 @@ app.innerHTML = `
     </div>
     </div>
     <aside class="side">
-      <div class="panel stats-panel">
+      <div class="panel hud">
         <div class="stats">
           <div class="stat"><span>金币</span><strong id="gold">0</strong></div>
           <div class="stat"><span>漏怪</span><strong id="leaks">0 / 10</strong></div>
@@ -49,24 +49,23 @@ app.innerHTML = `
           <button type="button" class="secondary hidden" id="pause-game">暂停</button>
         </div>
         <p class="hint" id="wave-hint">选塔后点草地建造；右键或 Esc 取消建造。点击已有塔可升级或出售。</p>
-      </div>
-      <div class="panel toolbar">
-        <h2>建造</h2>
-        <div class="tower-btns" id="tower-btns"></div>
-        <div class="selection-info" id="selection-info">未选中塔</div>
-        <div class="actions hidden" id="tower-actions">
-          <button type="button" class="secondary" id="upgrade" disabled>升级（2 级）</button>
-          <button type="button" class="danger" id="sell" disabled>出售</button>
-        </div>
-      </div>
-      <div class="panel">
-        <h2>设置</h2>
-        <div class="settings">
-          <button type="button" class="secondary" id="mute">${save.settings.muted ? '音效：关' : '音效：开'}</button>
-          <button type="button" class="secondary" id="speed">${save.settings.speed === 2 ? '倍速：2×' : '倍速：1×'}</button>
+        <div class="selection-block">
+          <div class="selection-info" id="selection-info">未选中塔</div>
+          <div class="actions hidden" id="tower-actions">
+            <button type="button" class="secondary" id="upgrade" disabled>升级（2 级）</button>
+            <button type="button" class="danger" id="sell" disabled>出售</button>
+          </div>
+          <div class="settings">
+            <button type="button" class="secondary" id="mute">${save.settings.muted ? '音效：关' : '音效：开'}</button>
+            <button type="button" class="secondary" id="speed">${save.settings.speed === 2 ? '倍速：2×' : '倍速：1×'}</button>
+          </div>
         </div>
       </div>
     </aside>
+    <div class="panel dock">
+      <h2>建造</h2>
+      <div class="tower-btns" id="tower-btns"></div>
+    </div>
   </div>
 `
 
