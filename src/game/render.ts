@@ -103,7 +103,7 @@ function drawRangeOverlays(
       const stats = def.levels[0]
       const cx = hover.col * CELL + CELL / 2
       const cy = hover.row * CELL + CELL / 2
-      drawRangeCircle(ctx, cx, cy, stats.range, 'rgba(88, 166, 255, 0.14)', 'rgba(136, 196, 255, 0.95)')
+      drawAttackPreview(ctx, cx, cy, stats.range, stats.splashRadius, 'rgba(88, 166, 255, 0.14)', 'rgba(136, 196, 255, 0.95)')
     }
   }
 
@@ -111,8 +111,40 @@ function drawRangeOverlays(
   if (sel) {
     const def = TOWER_DEFS[sel.kind]
     const stats = def.levels[sel.level - 1]
-    drawRangeCircle(ctx, sel.x, sel.y, stats.range, 'rgba(241, 196, 15, 0.14)', 'rgba(241, 196, 15, 0.9)')
+    drawAttackPreview(ctx, sel.x, sel.y, stats.range, stats.splashRadius, 'rgba(241, 196, 15, 0.14)', 'rgba(241, 196, 15, 0.9)')
   }
+}
+
+/** 外圈是射程；奥术余烬再画一圈命中灼烧范围，方便和单体塔区分。 */
+function drawAttackPreview(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  range: number,
+  splashRadius: number | undefined,
+  fill: string,
+  stroke: string,
+): void {
+  if (splashRadius) drawSplashZone(ctx, x, y, splashRadius, 0.28)
+  drawRangeCircle(ctx, x, y, range, fill, stroke)
+}
+
+function drawSplashZone(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  alpha: number,
+): void {
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.fillStyle = `rgba(232, 120, 64, ${alpha})`
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(255, 196, 140, 0.95)'
+  ctx.lineWidth = 2
+  ctx.setLineDash([3, 3])
+  ctx.stroke()
+  ctx.setLineDash([])
 }
 
 function drawRangeCircle(
@@ -271,6 +303,17 @@ function drawHitEffects(ctx: CanvasRenderingContext2D, snap: GameSnapshot): void
   for (const h of snap.hitEffects) {
     const def = TOWER_DEFS[h.towerKind]
     const t = 1 - h.life / h.maxLife
+    if (h.towerKind === 'ember') {
+      const fade = 1 - t
+      drawSplashZone(ctx, h.x, h.y, h.radius, 0.42 * fade)
+      ctx.beginPath()
+      ctx.arc(h.x, h.y, h.radius * (1 + t * 0.15), 0, Math.PI * 2)
+      ctx.strokeStyle = `rgba(255, 220, 180, ${0.85 * fade})`
+      ctx.lineWidth = 2
+      ctx.setLineDash([])
+      ctx.stroke()
+      continue
+    }
     const r = h.radius * (0.4 + t * 0.9)
     ctx.globalAlpha = 1 - t
     ctx.strokeStyle = def.color

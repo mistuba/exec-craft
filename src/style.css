@@ -22,6 +22,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -41,6 +45,13 @@ body {
   max-width: 1080px;
   margin: 0 auto;
   padding: 12px 12px 24px;
+}
+
+header .title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 header h1 {
@@ -79,9 +90,7 @@ header p {
     grid-area: side;
     min-width: 0;
     min-height: 0;
-    overflow: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    overflow: hidden;
   }
   .dock {
     grid-area: dock;
@@ -212,6 +221,33 @@ canvas {
   padding-top: 10px;
 }
 
+.inspector {
+  height: 92px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.inspector .selection-info {
+  flex: 1;
+  min-height: 0;
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.inspector .actions {
+  margin-top: 8px;
+  min-height: 40px;
+  flex-shrink: 0;
+}
+
+.inspector .actions.hidden {
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .selection-block .actions {
   margin-top: 8px;
 }
@@ -329,14 +365,39 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.settings {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  margin-top: 2px;
+  padding: 0;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #21262d;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
-.settings button {
-  flex: 1;
+.icon-btn:hover {
+  border-color: var(--accent);
+}
+
+.icon-btn .icon-off {
+  display: none;
+}
+
+.icon-btn.is-muted {
+  color: var(--muted);
+}
+
+.icon-btn.is-muted .icon-on {
+  display: none;
+}
+
+.icon-btn.is-muted .icon-off {
+  display: block;
 }
 
 .hint {
